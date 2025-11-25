@@ -16,11 +16,28 @@ jobs:
       - name: Checkout repositório
         uses: actions/checkout@v4
 
-      - name: Extrair JSON do corpo do Issue
+      - name: Extrair JSON do corpo do Issue (Node)
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
-          body="${{ github.event.issue.body }}"
-          json=$(printf '%s\n' "$body" | sed -n '/```json/,/```/p' | sed '1d;$d')
-          echo "$json" > meus_links.json
+          node -e "
+          const fs = require('fs');
+          const body = process.env.ISSUE_BODY || '';
+          const match = body.match(/```json\\s*([\\s\\S]*?)```/);
+          if (!match) {
+            console.error('Bloco ```json ... ``` não encontrado no corpo do issue.');
+            process.exit(1);
+          }
+          const jsonText = match[1].trim();
+          try {
+            JSON.parse(jsonText);
+          } catch (e) {
+            console.error('JSON inválido:', e.message);
+            process.exit(1);
+          }
+          fs.writeFileSync('meus_links.json', jsonText);
+          console.log('meus_links.json atualizado com sucesso a partir do issue.');
+          "
 
       - name: Commit e push do JSON
         uses: stefanzweifel/git-auto-commit-action@v5
