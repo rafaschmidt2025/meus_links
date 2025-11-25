@@ -23,7 +23,7 @@ jobs:
 
           const body = process.env.ISSUE_BODY || "";
 
-          // Regex para capturar bloco ```json ... ```
+          // pega o bloco ```json ... ```
           const match = body.match(/```json\s*([\s\S]*?)```/);
 
           if (!match) {
@@ -33,16 +33,9 @@ jobs:
 
           const jsonText = match[1].trim();
 
-          // Validar JSON
-          try {
-            JSON.parse(jsonText);
-          } catch (e) {
-            console.error("❌ JSON inválido:", e.message);
-            process.exit(1);
-          }
-
+          // 👉 NÃO valida, só grava exatamente o que veio
           fs.writeFileSync("meus_links.json", jsonText);
-          console.log("✅ Arquivo meus_links.json atualizado com sucesso.");
+          console.log("✅ Arquivo meus_links.json atualizado (sem validação).");
           EOF
 
       - name: Executar script Node
