@@ -1,4 +1,5 @@
 {
+  "__versao": 2,
   "Serpro": [
   {"nome": "Siscop Web", "url": "https://solucoes.corporativo.serpro/siscopweb/", "desc": "", "favorito": false},
   {"nome": "Prisma", "url": "https://lowcode.serpro.gov.br/Prisma", "desc": "", "favorito": false},
