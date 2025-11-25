@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <title>Meus Links</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2563eb">
 
+<!-- =================== PARTE DO CSS =================== -->
 <style>
 * {
   box-sizing: border-box;
@@ -35,7 +39,6 @@ header {
 header h1 {
   font-size:20px;
   margin:0;
-  cursor:pointer; /* 3 cliques = alternar modo admin */
 }
 
 .engrenagem {
@@ -228,6 +231,19 @@ button {
   font-weight:bold;
 }
 
+/* linha com Salvar / Fechar lado a lado */
+.action-buttons {
+  display:flex;
+  gap:8px;
+  margin-top:4px;
+  margin-bottom:10px;
+}
+
+.action-buttons .add,
+.action-buttons .close {
+  flex:1;
+}
+
 .add {
   background:#2563eb;
   color:#fff;
@@ -235,8 +251,6 @@ button {
 
 .close {
   background:#e5e7eb;
-  margin-top:10px;
-  width:100%;
 }
 
 /* Botõezinhos de backup */
@@ -324,7 +338,7 @@ button {
 <body>
 
 <header>
-  <h1 id="appTitle">🔗 Meus Links</h1>
+  <h1>🔗 Meus Links</h1>
   <div class="engrenagem" onclick="abrirAdmin()">⚙️</div>
 </header>
 
@@ -354,8 +368,10 @@ button {
     <label>Descrição</label>
     <textarea id="descInput" placeholder="Para que é esse link?"></textarea>
 
-    <button class="add" onclick="salvar()">Salvar link</button>
-    <button class="close" onclick="fecharAdmin()">Fechar</button>
+    <div class="action-buttons">
+      <button class="add" onclick="salvar()">Salvar link</button>
+      <button class="close" onclick="fecharAdmin()">Fechar</button>
+    </div>
 
     <hr style="margin:16px 0; border:none; border-top:1px solid #e5e7eb;">
 
@@ -363,14 +379,29 @@ button {
       Backup / sincronização manual:
     </div>
 
-    <button class="small-btn btn-export" type="button" onclick="exportarJSON()">⬇️ Exportar (.json)</button>
+    <button class="small-btn btn-export" type="button" onclick="exportarJSON()">
+      ⬇️ Exportar (.json)
+    </button>
 
     <label for="importFile" class="small-btn btn-import">⬆️ Importar (.json)</label>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarJSON(event)">
 
-    <button class="small-btn btn-copy" type="button" onclick="copiarJSON()">📋 Copiar JSON</button>
+    <button class="small-btn btn-copy" type="button" onclick="copiarJSON()">
+      📋 Copiar JSON
+    </button>
 
-    <button class="small-btn btn-cloud" type="button" onclick="carregarDeOneDrive()">🌐 Carregar do OneDrive</button>
+    <button class="small-btn btn-cloud" type="button" onclick="forcarSincronizacao()">
+      Baixar do Git
+    </button>
+
+    <button id="btnInstallPWA" class="small-btn" type="button"
+            style="display:none; background:#4b5563; color:#fff;"
+            onclick="instalarPWA()">
+      Adicionar à tela inicial
+    </button>
+
+    <!-- Rodapé com info de cache/sincronização -->
+    <div id="syncInfo" style="margin-top:10px; font-size:11px; color:#6b7280;"></div>
   </div>
 </div>
 
@@ -383,22 +414,77 @@ button {
 <!-- MENU DE CONTEXTO DAS CATEGORIAS -->
 <div id="categoryMenu" class="context-menu" data-categoria="">
   <button onclick="adicionarLinkCategoria()">➕ Adicionar link</button>
+  <button onclick="renomearCategoria()">✏️ Renomear categoria</button>
   <button onclick="excluirCategoria()">🗑️ Excluir categoria</button>
-<button class="small-btn btn-cloud" type="button" onclick="enviarParaGit()">  📤 Enviar p/ GitHub</button>
 </div>
 
 <!-- TOAST -->
 <div id="toast"></div>
 
 <script>
-// ===== CONFIGURAÇÃO DO ONEDRIVE =====
+// =================== PARTE DO JS ===================
+// ===================================================
+// ===== PARTE DE CONFIG / JSON REMOTO / GITHUB ======
+// ===================================================
+// ===== CONFIGURAÇÃO DO JSON REMOTO (PULL) =====
 const ONEDRIVE_JSON_URL = "https://raw.githubusercontent.com/rafaschmidt2025/meus_links/refs/heads/main/meus_links.json";
 
+// chave onde a versão fica armazenada dentro do JSON
+const JSON_VERSION_KEY = "__versao";
+
+// ===== CACHE DE FAVICONS =====
+let faviconCache = {};
+try {
+  faviconCache = JSON.parse(localStorage.getItem("meusLinksFavicons") || "{}");
+} catch(e) {
+  faviconCache = {};
+}
+const FAVICON_CACHE_DIAS = 30;
+
+// ===== INFO DE SINCRONIZAÇÃO REMOTA =====
+let remoteLastSync   = Number(localStorage.getItem("meusLinksRemoteLastSync")   || "0");
+let remoteLastVersao = Number(localStorage.getItem("meusLinksRemoteLastVersao") || "0");
+
+// carrega dados salvos localmente
 let dados = JSON.parse(localStorage.getItem("meusLinks")) || {};
+let dadosVersao = Number(localStorage.getItem("meusLinksVersao") || "0");
+
 let editInfo = null; // {categoria, index}
 let lastCategory = localStorage.getItem("meusLinksUltimaCategoria") || "";
-let collapsedCategories = new Set(JSON.parse(localStorage.getItem("meusLinksCategoriasFechadas") || "[]"));
-let isAdmin = JSON.parse(localStorage.getItem("meusLinksIsAdmin") || "true");
+let collapsedCategories = new Set(
+  JSON.parse(localStorage.getItem("meusLinksCategoriasFechadas") || "[]")
+);
+
+// Modo leitura como padrão (sempre inicia desativado)
+let isAdmin = false;
+localStorage.setItem("meusLinksIsAdmin", "false");
+
+// ===== PWA: beforeinstallprompt + botão "Adicionar à tela inicial" =====
+let deferredPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById("btnInstallPWA");
+  if (btn) btn.style.display = "inline-block";
+});
+
+async function instalarPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  if (result.outcome === "accepted") {
+    showToast("App adicionado à tela inicial.");
+  }
+  deferredPrompt = null;
+  const btn = document.getElementById("btnInstallPWA");
+  if (btn) btn.style.display = "none";
+}
+
+// Se não tiver dados, tenta carregar do remoto (primeira vez apenas)
+if (!dados || Object.keys(dados).length === 0) {
+  carregarDeOneDrive(true); // auto, sem comparar versão (primeira carga)
+}
 
 // aplicar modo admin/leitura
 function aplicarModoAdmin(){
@@ -411,62 +497,15 @@ function aplicarModoAdmin(){
   }
 }
 
-function enviarParaGit(){
-  // pega o JSON atual dos links
-  const jsonStr = JSON.stringify(dados, null, 2);
-
-  // corpo do issue com bloco ```json
-  const body =
-    "Este issue foi aberto pelo app Meus Links.\n\n" +
-    "Se você confirmar a criação, a GitHub Action irá atualizar o arquivo `meus_links.json`.\n\n" +
-    "```json\n" +
-    jsonStr +
-    "\n```";
-
-  const url =
-    "https://github.com/rafaschmidt2025/meus_links/issues/new" +
-    "?title=" + encodeURIComponent("Atualizar meus_links.json") +
-    "&body="  + encodeURIComponent(body);
-
-  // abre a página de criação de issue já preenchida
-  window.open(url, "_blank");
-}
-
-
-// alternar modo admin em um lugar só
-function alternarModoAdmin(){
-  isAdmin = !isAdmin;
-  localStorage.setItem("meusLinksIsAdmin", JSON.stringify(isAdmin));
-  aplicarModoAdmin();
-}
-
 // atalho Ctrl+Shift+A para alternar modo
 document.addEventListener("keydown", function(e){
   if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
     e.preventDefault();
-    alternarModoAdmin();
+    isAdmin = !isAdmin;
+    localStorage.setItem("meusLinksIsAdmin", JSON.stringify(isAdmin));
+    aplicarModoAdmin();
   }
 });
-
-// 3 cliques no título (canto superior esquerdo) para alternar modo admin
-(function(){
-  const titulo = document.getElementById("appTitle");
-  if (!titulo) return;
-
-  let clickCount = 0;
-  let clickTimer = null;
-
-  titulo.addEventListener("click", () => {
-    clickCount++;
-    if (clickTimer) clearTimeout(clickTimer);
-    clickTimer = setTimeout(() => { clickCount = 0; }, 600);
-
-    if (clickCount >= 3) {
-      clickCount = 0;
-      alternarModoAdmin();
-    }
-  });
-})();
 
 // abrir/fechar painel
 function abrirAdmin(){
@@ -492,13 +531,6 @@ function fecharAdmin(){
   document.getElementById("adminTitle").textContent = "Adicionar Link";
 }
 
-// fechar admin ao clicar fora da caixa (fundo escuro)
-document.getElementById("adminPanel").addEventListener("click", function(e){
-  if (e.target === this) {
-    fecharAdmin();
-  }
-});
-
 // toast
 function showToast(msg){
   const toast = document.getElementById("toast");
@@ -508,6 +540,192 @@ function showToast(msg){
     toast.style.display = "none";
   }, 2500);
 }
+
+// helpers de data / contagem
+function contarLinksTotais(){
+  let total = 0;
+  for (const cat in dados) {
+    total += dados[cat].length;
+  }
+  return total;
+}
+
+function formatarData(timestamp){
+  if (!timestamp) return "Nunca";
+  const d = new Date(timestamp);
+  return d.toLocaleString("pt-BR");
+}
+
+// atualiza texto do rodapé de info de sincronização
+function atualizarInfoSincronizacao(){
+  const el = document.getElementById("syncInfo");
+  if (!el) return;
+
+  const totalLinks = contarLinksTotais();
+  const localVersao  = dadosVersao || 0;
+  const remoteVersao = remoteLastVersao || 0;
+
+  let texto = `Links locais: ${totalLinks} · Versão local: ${localVersao}`;
+
+  if (remoteVersao) {
+    texto += ` · Versão remota conhecida: ${remoteVersao}`;
+  }
+
+  if (remoteLastSync) {
+    texto += ` · Última sync: ${formatarData(remoteLastSync)}`;
+  }
+
+  el.textContent = texto;
+}
+
+// ===== FUNÇÕES DE BACKUP LOCAL / EXPORT / IMPORT =====
+
+function exportarJSON(){
+  const dataStr = JSON.stringify(dados, null, 2);
+  const blob = new Blob([dataStr], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "meus_links.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("Arquivo exportado.");
+}
+
+function importarJSON(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const json = JSON.parse(e.target.result);
+      if(typeof json === "object" && json !== null){
+        dados = json;
+        localStorage.setItem("meusLinks", JSON.stringify(dados));
+
+        // se o JSON tiver campo de versão, usamos
+        if (JSON_VERSION_KEY in json) {
+          dadosVersao = Number(json[JSON_VERSION_KEY]) || 0;
+        } else {
+          dadosVersao = 0;
+        }
+        localStorage.setItem("meusLinksVersao", String(dadosVersao));
+
+        collapsedCategories = new Set();
+        localStorage.removeItem("meusLinksCategoriasFechadas");
+        lastCategory = "";
+        localStorage.removeItem("meusLinksUltimaCategoria");
+        renderizar();
+        atualizarListaCategorias();
+        atualizarInfoSincronizacao();
+        showToast("Links importados com sucesso.");
+      } else {
+        alert("Arquivo JSON inválido.");
+      }
+    } catch(err){
+      alert("Erro ao ler o arquivo. Verifique se é um JSON válido.");
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+function copiarJSON(){
+  const data = JSON.stringify(dados, null, 2);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(data)
+      .then(() => showToast("JSON copiado para a área de transferência."))
+      .catch(() => alert("Não foi possível copiar automaticamente. Cole manualmente."));
+  } else {
+    alert("Seu navegador não permite cópia automática. Copie manualmente do console.");
+  }
+}
+
+// botão do painel admin (pull)
+function forcarSincronizacao(){
+  carregarDeOneDrive(false, true); // manual, só se versão remota for mais recente
+}
+
+// tenta carregar JSON diretamente do servidor (GitHub raw)
+// auto = true → chamado na inicialização
+// apenasSeMaisRecente = true → só substitui se a versão remota for maior
+async function carregarDeOneDrive(auto = false, apenasSeMaisRecente = false){
+  if (!ONEDRIVE_JSON_URL) {
+    if (!auto) {
+      alert("Configure o ONEDRIVE_JSON_URL no código com o link público do JSON.");
+    }
+    return;
+  }
+
+  // cache inteligente: evita chamadas em sequência muito rápidas
+  if (!auto) {
+    const now = Date.now();
+    const lastCheck = Number(localStorage.getItem("meusLinksRemoteLastCheck") || "0");
+    const intervaloMs = 5000; // 5s
+    if (now - lastCheck < intervaloMs) {
+      showToast("Você acabou de sincronizar. Aguarde alguns segundos antes de tentar novamente.");
+      return;
+    }
+    localStorage.setItem("meusLinksRemoteLastCheck", String(now));
+  }
+
+  try {
+    const urlComBypass =
+      ONEDRIVE_JSON_URL + (ONEDRIVE_JSON_URL.includes("?") ? "&" : "?") +
+      "_t=" + Date.now();
+
+    const resp = await fetch(urlComBypass);
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const jsonRemoto = await resp.json();
+
+    if (typeof jsonRemoto !== "object" || jsonRemoto === null) {
+      throw new Error("JSON remoto inválido");
+    }
+
+    let versaoRemota = 0;
+    if (JSON_VERSION_KEY in jsonRemoto) {
+      versaoRemota = Number(jsonRemoto[JSON_VERSION_KEY]) || 0;
+    }
+
+    if (apenasSeMaisRecente && versaoRemota && versaoRemota <= dadosVersao) {
+      showToast(
+        "Versão remota (" + versaoRemota + ") não é mais recente que a local (" +
+        dadosVersao + "). Nada foi alterado."
+      );
+      return;
+    }
+
+    dados = jsonRemoto;
+    localStorage.setItem("meusLinks", JSON.stringify(dados));
+
+    dadosVersao = versaoRemota || 0;
+    localStorage.setItem("meusLinksVersao", String(dadosVersao));
+
+    collapsedCategories = new Set();
+    localStorage.removeItem("meusLinksCategoriasFechadas");
+    lastCategory = "";
+    localStorage.removeItem("meusLinksUltimaCategoria");
+
+    remoteLastSync = Date.now();
+    remoteLastVersao = versaoRemota || 0;
+    localStorage.setItem("meusLinksRemoteLastSync", String(remoteLastSync));
+    localStorage.setItem("meusLinksRemoteLastVersao", String(remoteLastVersao));
+
+    renderizar();
+    atualizarListaCategorias();
+    atualizarInfoSincronizacao();
+    showToast("Links carregados do Git com sucesso.");
+  } catch (err){
+    if (!auto) {
+      alert("Erro ao carregar do Git: " + err.message);
+    }
+  }
+}
+
+// ===== RESTO DAS FUNÇÕES (renderizar, editar, etc.) =====
 
 // salva link
 function salvar(){
@@ -557,6 +775,11 @@ function salvar(){
     dados[categoriaChave].push({nome, url, desc, favorito:false});
   }
 
+  // incrementa "versão local" sempre que altera algo
+  dadosVersao = (dadosVersao || 0) + 1;
+  dados[JSON_VERSION_KEY] = dadosVersao;
+  localStorage.setItem("meusLinksVersao", String(dadosVersao));
+
   localStorage.setItem("meusLinks", JSON.stringify(dados));
   lastCategory = categoriaChave;
   localStorage.setItem("meusLinksUltimaCategoria", lastCategory);
@@ -569,6 +792,7 @@ function salvar(){
   fecharAdmin();
   renderizar();
   atualizarListaCategorias();
+  atualizarInfoSincronizacao();
   showToast(msgToast);
 }
 
@@ -643,9 +867,14 @@ function apagarLink(){
     if (dados[cat].length === 0) {
       delete dados[cat];
     }
+    dadosVersao = (dadosVersao || 0) + 1;
+    dados[JSON_VERSION_KEY] = dadosVersao;
+    localStorage.setItem("meusLinksVersao", String(dadosVersao));
+
     localStorage.setItem("meusLinks", JSON.stringify(dados));
     renderizar();
     atualizarListaCategorias();
+    atualizarInfoSincronizacao();
     showToast("Link apagado.");
   }
   fecharMenus();
@@ -674,6 +903,58 @@ function adicionarLinkCategoria(){
   }, 50);
 }
 
+// renomear categoria
+function renomearCategoria(){
+  const menu = document.getElementById("categoryMenu");
+  const categoriaAntiga = menu.dataset.categoria;
+
+  const novaCategoria = prompt(
+    "Digite o novo nome para a categoria:",
+    categoriaAntiga
+  );
+
+  if (!novaCategoria || novaCategoria.trim() === categoriaAntiga) {
+    fecharMenus();
+    return;
+  }
+
+  const novoNome = novaCategoria.trim();
+  if (dados[novoNome] && novoNome !== categoriaAntiga) {
+    alert("Já existe uma categoria com esse nome.");
+    fecharMenus();
+    return;
+  }
+
+  dados[novoNome] = dados[categoriaAntiga];
+  delete dados[categoriaAntiga];
+
+  if (lastCategory === categoriaAntiga) {
+    lastCategory = novoNome;
+    localStorage.setItem("meusLinksUltimaCategoria", lastCategory);
+  }
+
+  if (collapsedCategories.has(categoriaAntiga)) {
+    collapsedCategories.delete(categoriaAntiga);
+    collapsedCategories.add(novoNome);
+    localStorage.setItem(
+      "meusLinksCategoriasFechadas",
+      JSON.stringify(Array.from(collapsedCategories))
+    );
+  }
+
+  dadosVersao = (dadosVersao || 0) + 1;
+  dados[JSON_VERSION_KEY] = dadosVersao;
+  localStorage.setItem("meusLinksVersao", String(dadosVersao));
+
+  localStorage.setItem("meusLinks", JSON.stringify(dados));
+
+  fecharMenus();
+  renderizar();
+  atualizarListaCategorias();
+  atualizarInfoSincronizacao();
+  showToast("Categoria renomeada.");
+}
+
 // ação do menu de categoria: excluir categoria inteira
 function excluirCategoria(){
   const menu = document.getElementById("categoryMenu");
@@ -694,6 +975,10 @@ function excluirCategoria(){
   }
 
   delete dados[categoria];
+  dadosVersao = (dadosVersao || 0) + 1;
+  dados[JSON_VERSION_KEY] = dadosVersao;
+  localStorage.setItem("meusLinksVersao", String(dadosVersao));
+
   localStorage.setItem("meusLinks", JSON.stringify(dados));
 
   if (lastCategory === categoria) {
@@ -712,6 +997,7 @@ function excluirCategoria(){
   fecharMenus();
   renderizar();
   atualizarListaCategorias();
+  atualizarInfoSincronizacao();
   showToast("Categoria excluída.");
 }
 
@@ -722,8 +1008,10 @@ function toggleCategoria(categoria){
   } else {
     collapsedCategories.add(categoria);
   }
-  localStorage.setItem("meusLinksCategoriasFechadas",
-    JSON.stringify(Array.from(collapsedCategories)));
+  localStorage.setItem(
+    "meusLinksCategoriasFechadas",
+    JSON.stringify(Array.from(collapsedCategories))
+  );
   renderizar();
 }
 
@@ -740,7 +1028,7 @@ function filtrar(){
     card.style.display = texto.includes(termo) ? "flex" : "none";
   });
 
-  // se a categoria não tiver nenhum card visível e o nome não bater, pode colapsar visualmente
+  // se a categoria não tiver nenhum card visível e o nome não bater, "apaga" visualmente
   categorias.forEach(catEl => {
     const titleEl = catEl.querySelector(".category-title");
     const catName = titleEl ? titleEl.textContent.toLowerCase() : "";
@@ -788,7 +1076,15 @@ function renderizar(){
 
     linksOrdenados.forEach(link => {
       const indexOriginal = link._idx;
-      const favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(link.url)}`;
+      const faviconKey = new URL(link.url).origin;
+      let favicon = faviconCache[faviconKey];
+
+      if (!favicon) {
+        favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(link.url)}`;
+        faviconCache[faviconKey] = favicon;
+        localStorage.setItem("meusLinksFavicons", JSON.stringify(faviconCache));
+      }
+
       const favClass = link.favorito ? "favorite-btn favorito" : "favorite-btn";
 
       html += `
@@ -856,94 +1152,12 @@ document.addEventListener("click", function(e){
   }
 });
 
-// ===== IMPORT / EXPORT / CLOUD =====
-
-function exportarJSON(){
-  const dataStr = JSON.stringify(dados, null, 2);
-  const blob = new Blob([dataStr], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "meus_links.json";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast("Arquivo exportado.");
-}
-
-function importarJSON(event){
-  const file = event.target.files[0];
-  if(!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try {
-      const json = JSON.parse(e.target.result);
-      if(typeof json === "object" && json !== null){
-        dados = json;
-        localStorage.setItem("meusLinks", JSON.stringify(dados));
-        collapsedCategories = new Set();
-        localStorage.removeItem("meusLinksCategoriasFechadas");
-        lastCategory = "";
-        localStorage.removeItem("meusLinksUltimaCategoria");
-        renderizar();
-        atualizarListaCategorias();
-        showToast("Links importados com sucesso.");
-      } else {
-        alert("Arquivo JSON inválido.");
-      }
-    } catch(err){
-      alert("Erro ao ler o arquivo. Verifique se é um JSON válido.");
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = "";
-}
-
-function copiarJSON(){
-  const dataStr = JSON.stringify(dados, null, 2);
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(dataStr)
-      .then(() => showToast("JSON copiado para a área de transferência."))
-      .catch(() => alert("Não foi possível copiar automaticamente. Cole manualmente."));
-  } else {
-    alert("Seu navegador não permite cópia automática. Copie manualmente do console.");
-  }
-}
-
-// tenta carregar JSON diretamente do OneDrive
-async function carregarDeOneDrive(){
-  if (!ONEDRIVE_JSON_URL) {
-    alert("Configure o ONEDRIVE_JSON_URL no código com o link público do JSON.");
-    return;
-  }
-  try {
-    const resp = await fetch(ONEDRIVE_JSON_URL);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const json = await resp.json();
-    if (typeof json !== "object" || json === null) {
-      throw new Error("JSON inválido");
-    }
-    dados = json;
-    localStorage.setItem("meusLinks", JSON.stringify(dados));
-    collapsedCategories = new Set();
-    localStorage.removeItem("meusLinksCategoriasFechadas");
-    lastCategory = "";
-    localStorage.removeItem("meusLinksUltimaCategoria");
-    renderizar();
-    atualizarListaCategorias();
-    showToast("Links carregados do OneDrive.");
-  } catch (err){
-    alert("Erro ao carregar do OneDrive: " + err.message);
-  }
-}
-
 // inicialização
 renderizar();
 atualizarListaCategorias();
 configurarEnter();
-aplicarModoAdmin(); // aplica modo admin/leitura ao abrir
+aplicarModoAdmin(); // aplica modo leitura/admin ao abrir
+atualizarInfoSincronizacao();
 </script>
 
 </body>
