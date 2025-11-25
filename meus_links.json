@@ -1,97 +1,552 @@
 {
-  "__versao": 2,
+  "__versao": 4,
   "Serpro": [
-  {"nome": "Siscop Web", "url": "https://solucoes.corporativo.serpro/siscopweb/", "desc": "", "favorito": false},
-  {"nome": "Prisma", "url": "https://lowcode.serpro.gov.br/Prisma", "desc": "", "favorito": false},
-  {"nome": "SiHEx", "url": "https://lowcode.serpro.gov.br/SiHEx/Login", "desc": "", "favorito": false},
-  {"nome": "FCT", "url": "https://gfct.portalcorporativo.serpro/fct/index.asp", "desc": "", "favorito": false},
-  {"nome": "SGP", "url": "https://solucoes.corporativo.serpro/prodsgp", "desc": "", "favorito": false},
-  {"nome": "Soluciona", "url": "http://soluciona.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Emissão Contracheque", "url": "https://lowcode.serpro.gov.br/contracheque/Login", "desc": "", "favorito": false},
-  {"nome": "Meu SERPRO", "url": "https://intra.serpro.gov.br/sobre/meu-serpro/meu-serpro", "desc": "", "favorito": false},
-  {"nome": "Alteração de Jornada", "url": "https://solucoes.corporativo.serpro/gp/microservicos/#/inscricaoAlteracaoJornada", "desc": "", "favorito": false},
-  {"nome": "Simulador PGCS", "url": "https://solucoes.corporativo.serpro/gp/simulador-pgcs/#/", "desc": "", "favorito": false},
-  {"nome": "Cronograma Web", "url": "https://solucoes.corporativo.serpro/CronogramaFolha/", "desc": "", "favorito": false},
-  {"nome": "Avaliação Acompanhamento", "url": "https://acompanhaweb.portalcorporativo.serpro/login.php", "desc": "", "favorito": false},
-  {"nome": "Promoção", "url": "https://lowcode.corporativo.serpro/promocao", "desc": "", "favorito": false},
-  {"nome": "Banco de Horas", "url": "https://solucoes.corporativo.serpro/gp/adesaobancohoras/#/home", "desc": "", "favorito": false},
-  {"nome": "Sistema de Consignação do Serpro", "url": "https://consignacao.serpro.gov.br", "desc": "", "favorito": false},
-  {"nome": "OuvSerpro", "url": "https://solucoes.corporativo.serpro.gov.br/ouvserpro/", "desc": "", "favorito": false},
-  {"nome": "Portal GP & VC", "url": "https://solucoes.corporativo.serpro/GpVoce", "desc": "", "favorito": false},
-  {"nome": "RECPGCS", "url": "https://lowcode.serpro.gov.br/recpgcs/Login", "desc": "", "favorito": false},
-  {"nome": "Sistema de Trabalho Remoto", "url": "https://lowcode.serpro.gov.br/TrabalhoRemoto/Login", "desc": "", "favorito": false},
-  {"nome": "SGDES", "url": "https://solucoes.corporativo.serpro/gp/gdes/#/home", "desc": "", "favorito": false},
-  {"nome": "Cessão de Pessoal", "url": "https://solucoes.corporativo.serpro/suite/#/Transacoes/315", "desc": "", "favorito": false},
-  {"nome": "GFC", "url": "https://gfct.portalcorporativo.serpro/gfc/index.asp", "desc": "", "favorito": false},
-  {"nome": "INCORPORA", "url": "https://lowcode.serpro.gov.br/Incorpora/AdesaoFCT_Empregado", "desc": "", "favorito": false},
-  {"nome": "Coleções Digitais", "url": "https://colecoesdigitais.serpro", "desc": "", "favorito": false},
-  {"nome": "Intelecto", "url": "https://intelecto.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Glossários", "url": "https://glossarioserpro.serpro/pagina.php", "desc": "", "favorito": false},
-  {"nome": "Pergamum", "url": "https://pergamum.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "ESCOLA EDUCA.VOCÊ (INTERNA)", "url": "https://educa.voce.serpro.gov.br/login/index.php", "desc": "", "favorito": false},
-  {"nome": "ESCOLA SERPRO EDUCA (EXTERNA)", "url": "https://educa.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Demonstra", "url": "http://demonstra.serpro/login.php", "desc": "", "favorito": false},
-  {"nome": "Memória SERPRO", "url": "http://www1.museuvirtual.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Mapeamento do Conhecimento", "url": "https://lowcode.serpro.gov.br/MapConhecimento/", "desc": "", "favorito": false},
-  {"nome": "Grow", "url": "https://lowcode.serpro.gov.br/Grow/", "desc": "", "favorito": false},
-  {"nome": "CIRCUITO EDUCACIONAL", "url": "https://circuito-educacional.serpro/", "desc": "", "favorito": false},
-  {"nome": "NEOVERO", "url": "https://serpro.neovero.com/", "desc": "", "favorito": false},
-  {"nome": "Teleaux", "url": "https://lowcode.corporativo.serpro/teleAux/Dashboard", "desc": "", "favorito": false},
-  {"nome": "Siga-Doc", "url": "https://solucoes.corporativo.serpro.gov.br/sigadoc/", "desc": "", "favorito": false},
-  {"nome": "Siscor", "url": "https://solucoes.corporativo.serpro/SiscorWeb/", "desc": "", "favorito": false},
-  {"nome": "Sinor", "url": "https://solucoes.corporativo.serpro/sinor/", "desc": "", "favorito": false},
-  {"nome": "Infocoadm", "url": "https://info.coadm.serpro/pentaho/Home", "desc": "", "favorito": false},
-  {"nome": "Processo Decisório", "url": "https://solucoes.corporativo.serpro.gov.br/pdecisorio/#/paineltarefas", "desc": "", "favorito": false},
-  {"nome": "Busca Empregado", "url": "https://buscaempregado.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Coleta de Iniciativas", "url": "https://solucoes.corporativo.serpro/iniciativas/", "desc": "", "favorito": false},
-  {"nome": "Processo Verde", "url": "https://processoverde.documenta.serpro/share/page/site/processoverde/documentlibrary", "desc": "", "favorito": false},
-  {"nome": "Portal MeuDomínio", "url": "https://meudominio.serpro.gov.br/#/", "desc": "", "favorito": false},
-  {"nome": "Integra", "url": "https://integra.serpro.gov.br/apps/cmn/LauncherApplication.jsp", "desc": "", "favorito": false},
-  {"nome": "OrganizaWeb", "url": "https://lowcode.serpro.gov.br/organizaweb/", "desc": "", "favorito": false},
-  {"nome": "Neosigner", "url": "https://neosigner.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "RAT Digital", "url": "https://rat.estaleiro.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Inovadoc", "url": "https://inovadoc.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Data Discovery", "url": "https://dd.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "E-CGU", "url": "https://ecgu.cgu.gov.br/", "desc": "", "favorito": false},
-  {"nome": "SISAUDIT (Consulta)", "url": "https://solucoes.corporativo.serpro/sisaudit", "desc": "", "favorito": false},
-  {"nome": "Sisaud (consulta)", "url": "https://sisaudweb.serpro/", "desc": "", "favorito": false},
-  {"nome": "C-GRS", "url": "https://controlegrs.serpro/cgrs/private/pages/principal.jsf", "desc": "", "favorito": false},
-  {"nome": "Risk Manager", "url": "https://rm.serpro.gov.br/RM7_PORTAL/", "desc": "", "favorito": false},
-  {"nome": "JÚDICE", "url": "https://judice.judicelawtech.com.br/form-login", "desc": "", "favorito": false},
-  {"nome": "GRCI", "url": "https://grc.serpro/", "desc": "", "favorito": false},
-  {"nome": "Archer", "url": "https://grc.serpro/apps/ArcherApp/Home.aspx", "desc": "", "favorito": false},
-  {"nome": "Gedig", "url": "http://www.gedig.serpro/gedig/", "desc": "", "favorito": false},
-  {"nome": "SiareWeb", "url": "https://siare.portalcorporativo.serpro/", "desc": "", "favorito": false},
-  {"nome": "Placont", "url": "http://placont.portalcorporativo.serpro/", "desc": "", "favorito": false},
-  {"nome": "Sistema de Custos", "url": "http://custosweb.portalcorporativo.serpro/index.asp", "desc": "", "favorito": false},
-  {"nome": "Planorc", "url": "http://planorc.portalcorporativo.serpro/", "desc": "", "favorito": false},
-  {"nome": "Sigecom", "url": "https://solucoes.corporativo.serpro/sigecom/private/templates/menuDinamico.jsf", "desc": "", "favorito": false},
-  {"nome": "HisAq", "url": "https://solucoes.corporativo.serpro/HisaqWeb/entrada.do", "desc": "", "favorito": false},
-  {"nome": "BI HisAq", "url": "https://www1.pentaho.bsa.serpro.gov.br/bihisaq/Login", "desc": "", "favorito": false},
-  {"nome": "Demandas", "url": "https://demandas.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "PAV", "url": "https://gestor.cliente.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "CONTI", "url": "https://lowcode.serpro.gov.br/conti/", "desc": "", "favorito": false},
-  {"nome": "ERP", "url": "https://avanceprd.mxm.com.br/", "desc": "", "favorito": false},
-  {"nome": "Conad", "url": "https://lowcode.serpro.gov.br/conad/DashboardHome.aspx", "desc": "", "favorito": false},
-  {"nome": "Controla", "url": "https://cssinter.serpro.gov.br/SCCDPortalWEB/pages/dynamicPortal.jsf?faces-redirect=true&ITEMNUM=3602", "desc": "", "favorito": false},
-  {"nome": "DDI CLIENTES", "url": "https://ddicliente.serpro.gov.br", "desc": "", "favorito": false},
-  {"nome": "Lupa", "url": "https://lowcode.serpro.gov.br/LUPA/", "desc": "", "favorito": false},
-  {"nome": "Portal Unifica", "url": "https://unifica.serpro/", "desc": "", "favorito": false},
-  {"nome": "Pontua", "url": "https://pontua.estaleiro.serpro.gov.br/portal-web/#/login", "desc": "", "favorito": false},
-  {"nome": "Estimativas", "url": "https://lowcode.serpro.gov.br/Estimativas/", "desc": "", "favorito": false},
-  {"nome": "InovaStudio", "url": "https://inovastudio.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "GM - Processos", "url": "https://gmprocessos.serpronet.serpro/login_page.php", "desc": "", "favorito": false},
-  {"nome": "Sistema Jurídico", "url": "https://solucoes.corporativo.serpro/sijus/", "desc": "", "favorito": false},
-  {"nome": "Govi Controle", "url": "https://www.sccd.serpro", "desc": "", "favorito": false},
-  {"nome": "Catálogo de Tecnologia", "url": "https://catalogotec.estaleiro.serpro/", "desc": "", "favorito": false},
-  {"nome": "Emulador HOD", "url": "https://solucoes.corporativo.serpro/", "desc": "", "favorito": false},
-  {"nome": "Troca Senha", "url": "https://trocasenha.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "Assiste", "url": "https://assiste.estaleiro.serpro.gov.br/serpro/live", "desc": "", "favorito": false},
-  {"nome": "SGIC", "url": "https://sgic-sede.bsa.serpro/printer-ldap.php", "desc": "", "favorito": false},
-  {"nome": "ALM", "url": "https://alm.serpro/ccm/auth/authrequired", "desc": "", "favorito": false},
-  {"nome": "InfoSUPEC", "url": "https://info.supec.serpro.gov.br/", "desc": "", "favorito": false},
-  {"nome": "SGConf", "url": "https://sgconf.serpro/", "desc": "", "favorito": false},
-  {"nome": "SIGSAR", "url": "https://sigsar.estaleiro.serpro.gov.br/", "desc": "", "favorito": false}
+    {
+      "nome": "Siscop Web",
+      "url": "https://solucoes.corporativo.serpro/siscopweb/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Prisma",
+      "url": "https://lowcode.serpro.gov.br/Prisma",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SiHEx",
+      "url": "https://lowcode.serpro.gov.br/SiHEx/Login",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "FCT",
+      "url": "https://gfct.portalcorporativo.serpro/fct/index.asp",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SGP",
+      "url": "https://solucoes.corporativo.serpro/prodsgp",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Soluciona",
+      "url": "http://soluciona.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Emissão Contracheque",
+      "url": "https://lowcode.serpro.gov.br/contracheque/Login",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Meu SERPRO",
+      "url": "https://intra.serpro.gov.br/sobre/meu-serpro/meu-serpro",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Alteração de Jornada",
+      "url": "https://solucoes.corporativo.serpro/gp/microservicos/#/inscricaoAlteracaoJornada",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Simulador PGCS",
+      "url": "https://solucoes.corporativo.serpro/gp/simulador-pgcs/#/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Cronograma Web",
+      "url": "https://solucoes.corporativo.serpro/CronogramaFolha/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Avaliação Acompanhamento",
+      "url": "https://acompanhaweb.portalcorporativo.serpro/login.php",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Promoção",
+      "url": "https://lowcode.corporativo.serpro/promocao",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Banco de Horas",
+      "url": "https://solucoes.corporativo.serpro/gp/adesaobancohoras/#/home",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Sistema de Consignação do Serpro",
+      "url": "https://consignacao.serpro.gov.br",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "OuvSerpro",
+      "url": "https://solucoes.corporativo.serpro.gov.br/ouvserpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Portal GP & VC",
+      "url": "https://solucoes.corporativo.serpro/GpVoce",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "RECPGCS",
+      "url": "https://lowcode.serpro.gov.br/recpgcs/Login",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Sistema de Trabalho Remoto",
+      "url": "https://lowcode.serpro.gov.br/TrabalhoRemoto/Login",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SGDES",
+      "url": "https://solucoes.corporativo.serpro/gp/gdes/#/home",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Cessão de Pessoal",
+      "url": "https://solucoes.corporativo.serpro/suite/#/Transacoes/315",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "GFC",
+      "url": "https://gfct.portalcorporativo.serpro/gfc/index.asp",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "INCORPORA",
+      "url": "https://lowcode.serpro.gov.br/Incorpora/AdesaoFCT_Empregado",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Coleções Digitais",
+      "url": "https://colecoesdigitais.serpro",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Intelecto",
+      "url": "https://intelecto.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Glossários",
+      "url": "https://glossarioserpro.serpro/pagina.php",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Pergamum",
+      "url": "https://pergamum.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "ESCOLA EDUCA.VOCÊ (INTERNA)",
+      "url": "https://educa.voce.serpro.gov.br/login/index.php",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "ESCOLA SERPRO EDUCA (EXTERNA)",
+      "url": "https://educa.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Demonstra",
+      "url": "http://demonstra.serpro/login.php",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Memória SERPRO",
+      "url": "http://www1.museuvirtual.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Mapeamento do Conhecimento",
+      "url": "https://lowcode.serpro.gov.br/MapConhecimento/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Grow",
+      "url": "https://lowcode.serpro.gov.br/Grow/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "CIRCUITO EDUCACIONAL",
+      "url": "https://circuito-educacional.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "NEOVERO",
+      "url": "https://serpro.neovero.com/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Teleaux",
+      "url": "https://lowcode.corporativo.serpro/teleAux/Dashboard",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Siga-Doc",
+      "url": "https://solucoes.corporativo.serpro.gov.br/sigadoc/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Siscor",
+      "url": "https://solucoes.corporativo.serpro/SiscorWeb/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Sinor",
+      "url": "https://solucoes.corporativo.serpro/sinor/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Infocoadm",
+      "url": "https://info.coadm.serpro/pentaho/Home",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Processo Decisório",
+      "url": "https://solucoes.corporativo.serpro.gov.br/pdecisorio/#/paineltarefas",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Busca Empregado",
+      "url": "https://buscaempregado.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Coleta de Iniciativas",
+      "url": "https://solucoes.corporativo.serpro/iniciativas/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Processo Verde",
+      "url": "https://processoverde.documenta.serpro/share/page/site/processoverde/documentlibrary",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Portal MeuDomínio",
+      "url": "https://meudominio.serpro.gov.br/#/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Integra",
+      "url": "https://integra.serpro.gov.br/apps/cmn/LauncherApplication.jsp",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "OrganizaWeb",
+      "url": "https://lowcode.serpro.gov.br/organizaweb/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Neosigner",
+      "url": "https://neosigner.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "RAT Digital",
+      "url": "https://rat.estaleiro.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Inovadoc",
+      "url": "https://inovadoc.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Data Discovery",
+      "url": "https://dd.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "E-CGU",
+      "url": "https://ecgu.cgu.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SISAUDIT (Consulta)",
+      "url": "https://solucoes.corporativo.serpro/sisaudit",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Sisaud (consulta)",
+      "url": "https://sisaudweb.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "C-GRS",
+      "url": "https://controlegrs.serpro/cgrs/private/pages/principal.jsf",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Risk Manager",
+      "url": "https://rm.serpro.gov.br/RM7_PORTAL/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "JÚDICE",
+      "url": "https://judice.judicelawtech.com.br/form-login",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "GRCI",
+      "url": "https://grc.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Archer",
+      "url": "https://grc.serpro/apps/ArcherApp/Home.aspx",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Gedig",
+      "url": "http://www.gedig.serpro/gedig/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SiareWeb",
+      "url": "https://siare.portalcorporativo.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Placont",
+      "url": "http://placont.portalcorporativo.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Sistema de Custos",
+      "url": "http://custosweb.portalcorporativo.serpro/index.asp",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Planorc",
+      "url": "http://planorc.portalcorporativo.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Sigecom",
+      "url": "https://solucoes.corporativo.serpro/sigecom/private/templates/menuDinamico.jsf",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "HisAq",
+      "url": "https://solucoes.corporativo.serpro/HisaqWeb/entrada.do",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "BI HisAq",
+      "url": "https://www1.pentaho.bsa.serpro.gov.br/bihisaq/Login",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Demandas",
+      "url": "https://demandas.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "PAV",
+      "url": "https://gestor.cliente.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "CONTI",
+      "url": "https://lowcode.serpro.gov.br/conti/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "ERP",
+      "url": "https://avanceprd.mxm.com.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Conad",
+      "url": "https://lowcode.serpro.gov.br/conad/DashboardHome.aspx",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Controla",
+      "url": "https://cssinter.serpro.gov.br/SCCDPortalWEB/pages/dynamicPortal.jsf?faces-redirect=true&ITEMNUM=3602",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "DDI CLIENTES",
+      "url": "https://ddicliente.serpro.gov.br",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Lupa",
+      "url": "https://lowcode.serpro.gov.br/LUPA/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Portal Unifica",
+      "url": "https://unifica.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Pontua",
+      "url": "https://pontua.estaleiro.serpro.gov.br/portal-web/#/login",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Estimativas",
+      "url": "https://lowcode.serpro.gov.br/Estimativas/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "InovaStudio",
+      "url": "https://inovastudio.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "GM - Processos",
+      "url": "https://gmprocessos.serpronet.serpro/login_page.php",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Sistema Jurídico",
+      "url": "https://solucoes.corporativo.serpro/sijus/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Govi Controle",
+      "url": "https://www.sccd.serpro",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Catálogo de Tecnologia",
+      "url": "https://catalogotec.estaleiro.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Emulador HOD",
+      "url": "https://solucoes.corporativo.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Troca Senha",
+      "url": "https://trocasenha.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Assiste",
+      "url": "https://assiste.estaleiro.serpro.gov.br/serpro/live",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SGIC",
+      "url": "https://sgic-sede.bsa.serpro/printer-ldap.php",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "ALM",
+      "url": "https://alm.serpro/ccm/auth/authrequired",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "InfoSUPEC",
+      "url": "https://info.supec.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SGConf",
+      "url": "https://sgconf.serpro/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "SIGSAR",
+      "url": "https://sigsar.estaleiro.serpro.gov.br/",
+      "desc": "",
+      "favorito": false
+    }
   ],
   "INGPD": [
     {
@@ -108,6 +563,12 @@
       "nome": "Controle de Documentos Recebidos (APP)",
       "url": "https://apps.powerapps.com/play/e/default-c2db1c4d-29e6-4330-85e3-fb54b7696668/a/bacb7ff1-545c-4925-83a9-42e580fb2dd3?tenantId=c2db1c4d-29e6-4330-85e3-fb54b7696668&source=AppSharedV3&hint=d1f7a163-b8d3-4191-a67c-e03ae075e797&sourcetime=1725303549896",
       "desc": ""
+    },
+    {
+      "nome": "Follow-up",
+      "url": "https://serprogovbr.sharepoint.com/sites/ESGEC/Lists/Follow%20up/AllItems.aspx",
+      "desc": "",
+      "favorito": false
     }
   ],
   "Pessoal": [
