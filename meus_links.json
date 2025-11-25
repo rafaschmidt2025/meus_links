@@ -1,0 +1,94 @@
+{
+  "Serpro": [
+    {
+      "nome": "Siscor",
+      "url": "https://solucoes.corporativo.serpro/SiscorWeb/",
+      "desc": ""
+    },
+    {
+      "nome": "Autinkus",
+      "url": "https://autentikus.estaleiro.serpro.gov.br/#/",
+      "desc": ""
+    },
+    {
+      "nome": "Logo Serpro",
+      "url": "https://www.serpro.gov.br/menu/quem-somos/marca-serpro/formatos-marca",
+      "desc": ""
+    }
+  ],
+  "INGPD": [
+    {
+      "nome": "Pendências DP",
+      "url": "https://serprogovbr.sharepoint.com/:w:/r/sites/ESGEC/_layouts/15/Doc.aspx?sourcedoc=%7B77036600-9243-442B-AEA7-6E00FBD00E7E%7D&file=Acompanhamento%20de%20Pendencias%20DP.docx&action=default&mobileredirect=true",
+      "desc": ""
+    },
+    {
+      "nome": "Pendências Diretores",
+      "url": "https://serprogovbr.sharepoint.com/:w:/r/sites/ESGEC/_layouts/15/Doc.aspx?sourcedoc=%7B8A5C7FDA-F518-4C91-821A-B3545BFBBE0E%7D&file=Acompanhamento%20de%20Pendencias%20-%20DEMAIS%20DIRETORES.docx&action=default&mobileredirect=true",
+      "desc": ""
+    },
+    {
+      "nome": "Controle de Documentos Recebidos (APP)",
+      "url": "https://apps.powerapps.com/play/e/default-c2db1c4d-29e6-4330-85e3-fb54b7696668/a/bacb7ff1-545c-4925-83a9-42e580fb2dd3?tenantId=c2db1c4d-29e6-4330-85e3-fb54b7696668&source=AppSharedV3&hint=d1f7a163-b8d3-4191-a67c-e03ae075e797&sourcetime=1725303549896",
+      "desc": ""
+    }
+  ],
+  "Pessoal": [
+    {
+      "nome": "Gmail",
+      "url": "gmail.com",
+      "desc": ""
+    },
+    {
+      "nome": "Lovable",
+      "url": "https://lovable.dev/",
+      "desc": ""
+    },
+    {
+      "nome": "NeoEnergia",
+      "url": "https://agenciavirtual.neoenergiabrasilia.com.br/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Tim",
+      "url": "https://meutim.tim.com.br/",
+      "desc": "",
+      "favorito": false
+    }
+  ],
+  "Bancos": [
+    {
+      "nome": "CEF",
+      "url": "https://internetbanking.caixa.gov.br/sinbc/",
+      "desc": "",
+      "favorito": false
+    }
+  ],
+  "Ferramentas": [
+    {
+      "nome": "Banco de Imagens",
+      "url": "https://www.pngwing.com/pt/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Arquives Web",
+      "url": "https://web.archive.org/",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Power Automate",
+      "url": "https://make.powerautomate.com/environments/Default-c2db1c4d-29e6-4330-85e3-fb54b7696668/flows",
+      "desc": "",
+      "favorito": false
+    },
+    {
+      "nome": "Power Apps",
+      "url": "https://make.powerapps.com/",
+      "desc": "",
+      "favorito": false
+    }
+  ]
+}
