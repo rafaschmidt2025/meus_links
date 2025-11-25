@@ -1,7 +1,7 @@
 const CACHE_NAME = "meus-links-v1";
 const ASSETS = [
   "./",
-  "./meus_links.html",
+  "./index.html",
   "./manifest.webmanifest"
 ];
 
@@ -23,3 +23,4 @@ self.addEventListener("fetch", (event) => {
       .then((resp) => resp || fetch(event.request))
   );
 });
+
