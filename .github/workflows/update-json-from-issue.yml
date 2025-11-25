@@ -1,0 +1,35 @@
+name: Atualizar meus_links.json a partir de Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  atualizar-json:
+    if: startsWith(github.event.issue.title, 'Atualizar meus_links.json')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Extrair JSON do corpo do Issue
+        run: |
+          body="${{ github.event.issue.body }}"
+          json=$(printf '%s\n' "$body" | sed -n '/```json/,/```/p' | sed '1d;$d')
+          echo "$json" > meus_links.json
+
+      - name: Commit e push do JSON
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Atualiza meus_links.json via Issue #${{ github.event.issue.number }}"
+          file_pattern: "meus_links.json"
+
+      - name: Comentar e fechar o Issue
+        uses: peter-evans/close-issue@v2
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          comment: "✅ Arquivo **meus_links.json** atualizado com sucesso pelo workflow."
