@@ -1,56 +1,115 @@
-name: Atualizar meus_links.json a partir de Issue
+name: atualizar-json
 
 on:
   issues:
-    types: [opened]
+    types: [opened, edited]
+
+permissions:
+  contents: write   # para fazer commit
+  issues: write     # para comentar e fechar o issue
 
 jobs:
   atualizar-json:
-    if: startsWith(github.event.issue.title, 'Atualizar meus_links.json')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
 
     steps:
       - name: Checkout repositório
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Criar script Node temporário
         run: |
           cat << 'EOF' > extract.js
-          const fs = require('fs');
+          const fs = require("fs");
+          const path = require("path");
 
-          const body = process.env.ISSUE_BODY || "";
+          // Caminho do evento (fornecido pelo GitHub Actions)
+          const eventPath = process.env.GITHUB_EVENT_PATH;
+          if (!eventPath) {
+            throw new Error("GITHUB_EVENT_PATH não definido.");
+          }
 
-          // pega o bloco ```json ... ```
-          const match = body.match(/```json\s*([\s\S]*?)```/);
+          const event = JSON.parse(fs.readFileSync(eventPath, "utf8"));
+
+          // Corpo do Issue
+          const body =
+            (event.issue && event.issue.body) ||
+            (event.pull_request && event.pull_request.body) ||
+            "";
+
+          if (!body) {
+            throw new Error("Corpo do Issue/PR vazio.");
+          }
+
+          // Procura um bloco ```json ... ```
+          const regex = /```json\s*([\s\S]*?)```/i;
+          const match = body.match(regex);
 
           if (!match) {
-            console.error("❌ Bloco ```json ... ``` não encontrado no Issue.");
-            process.exit(1);
+            console.log("=== CORPO DO ISSUE LIDO ===");
+            console.log(body);
+            console.log("=== FIM DO CORPO ===");
+            throw new Error(
+              "Bloco ```json ... ``` não encontrado no Issue. " +
+              "Use o formato:\n```json\n{ ... }\n```"
+            );
           }
 
           const jsonText = match[1].trim();
+          let data;
 
-          // 👉 NÃO valida, só grava exatamente o que veio
-          fs.writeFileSync("meus_links.json", jsonText);
-          console.log("✅ Arquivo meus_links.json atualizado (sem validação).");
+          try {
+            data = JSON.parse(jsonText);
+          } catch (err) {
+            console.error("JSON encontrado, mas inválido:");
+            console.error(jsonText);
+            throw new Error("Erro ao fazer parse do JSON: " + err.message);
+          }
+
+          const outPath = path.join(process.cwd(), "meus_links.json");
+          fs.writeFileSync(outPath, JSON.stringify(data, null, 2), "utf8");
+
+          console.log("meus_links.json atualizado com sucesso em:", outPath);
           EOF
 
       - name: Executar script Node
-        env:
-          ISSUE_BODY: ${{ github.event.issue.body }}
         run: node extract.js
 
       - name: Commit e push do JSON
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Atualiza meus_links.json via Issue #${{ github.event.issue.number }}"
-          file_pattern: "meus_links.json"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Se não houve alteração no arquivo, não commita
+          if git diff --quiet -- meus_links.json; then
+            echo "Nenhuma alteração em meus_links.json. Nada para commitar."
+            exit 0
+          fi
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add meus_links.json
+          git commit -m "Atualiza meus_links.json a partir do Issue #${{ github.event.issue.number }}"
+          git push origin HEAD:main
 
       - name: Comentar e fechar o Issue
-        uses: peter-evans/close-issue@v2
+        if: success()
+        uses: actions/github-script@v7
         with:
-          issue-number: ${{ github.event.issue.number }}
-          comment: "✅ Arquivo **meus_links.json** atualizado com sucesso pelo workflow."
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.payload.issue.number;
+            const repo = context.repo;
+
+            await github.rest.issues.createComment({
+              ...repo,
+              issue_number,
+              body: "✅ JSON processado e salvo em `meus_links.json` pelo GitHub Actions."
+            });
+
+            await github.rest.issues.update({
+              ...repo,
+              issue_number,
+              state: "closed"
+            });
