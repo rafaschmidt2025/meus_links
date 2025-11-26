@@ -325,29 +325,6 @@ button {
   z-index:1100;
 }
 
-/* Botão flutuante para alternar modo admin (desktop + mobile) */
-#adminToggleFab {
-  position:fixed;
-  bottom:16px;
-  right:16px;
-  width:46px;
-  height:46px;
-  border-radius:50%;
-  background:#2563eb;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  box-shadow:0 4px 12px rgba(0,0,0,0.25);
-  font-size:20px;
-  z-index:950;
-}
-
-/* Em modo admin, muda a cor para diferenciar visualmente */
-body:not(.modo-view-only) #adminToggleFab {
-  background:#16a34a;
-}
-
 /* Mobile: mostrar sempre o menu ⋮ dos links */
 @media (max-width: 600px) {
   .link-menu-btn {
@@ -360,7 +337,7 @@ body:not(.modo-view-only) #adminToggleFab {
 <body class="modo-view-only">
 
 <header>
-  <h1>🔗 Meus Links</h1>
+  <h1 id="appTitle" title="Clique 3x para alternar modo administrador" style="cursor:pointer;">🔗 Meus Links</h1>
   <div class="engrenagem" onclick="abrirAdmin()">⚙️</div>
 </header>
 
@@ -371,11 +348,6 @@ body:not(.modo-view-only) #adminToggleFab {
   <!-- Categorias -->
   <div class="grid" id="linkContainer"></div>
 </div>
-
-<!-- Botão flutuante para alternar modo admin (funciona no celular também) -->
-<button id="adminToggleFab" onclick="alternarModoAdmin()" title="Alternar modo administrador">
-  🛠️
-</button>
 
 <!-- PAINEL ADMIN -->
 <div id="adminPanel">
@@ -452,7 +424,7 @@ body:not(.modo-view-only) #adminToggleFab {
 // ============ PARTE DE CONFIG / JSON REMOTO / GITHUB ==========
 // =============================================================
 // ===== CONFIGURAÇÃO DO JSON REMOTO (PULL) =====
-const ONEDRIVE_JSON_URL = "https://raw.githubusercontent.com/rafaschmidt2025/meus_links/refs/heads/main/meus_links.json";
+const ONEDRIVE_JSON_URL = "https://raw.githubusercontent.com/rafaschmidt2025/meus_links/main/meus_links.json";
 
 // chave onde a versão fica armazenada dentro do JSON
 const JSON_VERSION_KEY = "__versao";
@@ -462,7 +434,7 @@ const GITHUB_OWNER = "rafaschmidt2025";
 const GITHUB_REPO  = "meus_links";
 const GITHUB_FILE_PATH = "meus_links.json";
 
-// ⚠️ TROCAR LOCALMENTE PELO TOKEN REAL (NÃO COMITAR EM REPO PÚBLICO)
+// ⚠️ NÃO USE TOKEN REAL AQUI EM REPO PÚBLICO
 const GITHUB_TOKEN = "rafael";
 
 // ===== CACHE DE FAVICONS =====
@@ -488,9 +460,8 @@ let collapsedCategories = new Set(
   JSON.parse(localStorage.getItem("meusLinksCategoriasFechadas") || "[]")
 );
 
-// Modo leitura como padrão (sempre inicia desativado)
-let isAdmin = false;
-localStorage.setItem("meusLinksIsAdmin", "false");
+// modo admin/leitura respeitando o que estiver salvo
+let isAdmin = JSON.parse(localStorage.getItem("meusLinksIsAdmin") || "false");
 
 // ===== PWA: beforeinstallprompt + botão "Adicionar à tela inicial" =====
 let deferredPrompt = null;
@@ -540,11 +511,35 @@ function aplicarModoAdmin(){
   }
 }
 
-// alternar modo admin (usado pelo FAB e pelo atalho)
+// alternar modo admin (atalho + clique 3x)
 function alternarModoAdmin(){
   isAdmin = !isAdmin;
   localStorage.setItem("meusLinksIsAdmin", JSON.stringify(isAdmin));
   aplicarModoAdmin();
+}
+
+// lógica de clique triplo no título
+let tituloClickCount = 0;
+let tituloClickTimer = null;
+
+function handleTituloTripleClick() {
+  tituloClickCount++;
+  if (tituloClickTimer) clearTimeout(tituloClickTimer);
+  tituloClickTimer = setTimeout(() => {
+    tituloClickCount = 0;
+    tituloClickTimer = null;
+  }, 600); // janela de 600ms para contar os 3 cliques
+
+  if (tituloClickCount >= 3) {
+    tituloClickCount = 0;
+    tituloClickTimer = null;
+    alternarModoAdmin();
+  }
+}
+
+const tituloEl = document.getElementById("appTitle");
+if (tituloEl) {
+  tituloEl.addEventListener("click", handleTituloTripleClick);
 }
 
 // atalho Ctrl+Shift+A para alternar modo
@@ -1139,7 +1134,7 @@ function configurarEnter(){
   });
 }
 
-// fechar menus ao clicar fora
+// fechar menus ao clicar fora + fechar admin ao clicar fora da caixa
 document.addEventListener("click", function(e){
   const contextMenu = document.getElementById("contextMenu");
   const catMenu = document.getElementById("categoryMenu");
@@ -1149,6 +1144,13 @@ document.addEventListener("click", function(e){
   }
   if (catMenu.style.display === "block" && !e.target.closest("#categoryMenu")) {
     catMenu.style.display = "none";
+  }
+});
+
+// fechar painel admin ao clicar no fundo escuro
+document.getElementById("adminPanel").addEventListener("click", function(e){
+  if (e.target.id === "adminPanel") {
+    fecharAdmin();
   }
 });
 
@@ -1425,9 +1427,9 @@ atualizarInfoSincronizacao();
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // 2. COLE AQUI o firebaseConfig que o console do Firebase te mostrou
+  // 2. Config Firebase
   const firebaseConfig = {
-   apiKey: "AIzaSyBgNMLV6ecHc1bqJfGky5dxLUSCkkUxnDg",
+    apiKey: "AIzaSyBgNMLV6ecHc1bqJfGky5dxLUSCkkUxnDg",
     authDomain: "rafa-links.firebaseapp.com",
     projectId: "rafa-links",
     storageBucket: "rafa-links.firebasestorage.app",
@@ -1512,7 +1514,6 @@ atualizarInfoSincronizacao();
   // 8. Chamada inicial: ao abrir a página, tenta carregar da nuvem
   carregarDoFirestoreInicial();
 </script>
-
 
 </body>
 </html>
