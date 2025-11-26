@@ -19,10 +19,9 @@ body {
   background:#f4f7fb;
 }
 
-/* Modo leitura (sem admin) */
+/* Modo leitura (sem admin) – esconde só botões de edição, NÃO a estrela */
 body.modo-view-only .engrenagem,
 body.modo-view-only .category-menu-btn,
-body.modo-view-only .favorite-btn,
 body.modo-view-only .link-menu-btn {
   display:none !important;
 }
@@ -66,21 +65,21 @@ header h1 {
   font-size:13px;
 }
 
-/* Layout das categorias */
+/* Layout das categorias - CSS Grid */
 .grid {
-  display:flex;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap:16px;
   align-items:flex-start;
 }
 
+/* Card da categoria */
 .category {
   background:white;
   padding:10px 15px 15px 15px;
   border-radius:12px;
   box-shadow:0 4px 12px rgba(0,0,0,0.05);
-  flex:1 1 280px;
-  max-width:100%;
+  width:100%;
   align-self:flex-start;
 }
 
@@ -118,11 +117,15 @@ header h1 {
   cursor:pointer;
 }
 
-/* Corpo da categoria */
+/* Corpo da categoria (lista de links) */
 .category-body {
   border-top:1px solid #e5e7eb;
   margin-top:6px;
   padding-top:6px;
+
+  /* máximo ~5 cards, com scroll se passar disso */
+  max-height:320px;
+  overflow-y:auto;
 }
 
 /* Card de link */
@@ -275,11 +278,6 @@ button {
   color:#fff;
 }
 
-.btn-copy {
-  background:#4b5563;
-  color:#fff;
-}
-
 .btn-cloud {
   background:#0369a1;
   color:#fff;
@@ -327,6 +325,29 @@ button {
   z-index:1100;
 }
 
+/* Botão flutuante para alternar modo admin (desktop + mobile) */
+#adminToggleFab {
+  position:fixed;
+  bottom:16px;
+  right:16px;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  background:#2563eb;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.25);
+  font-size:20px;
+  z-index:950;
+}
+
+/* Em modo admin, muda a cor para diferenciar visualmente */
+body:not(.modo-view-only) #adminToggleFab {
+  background:#16a34a;
+}
+
 /* Mobile: mostrar sempre o menu ⋮ dos links */
 @media (max-width: 600px) {
   .link-menu-btn {
@@ -335,7 +356,8 @@ button {
 }
 </style>
 </head>
-<body>
+
+<body class="modo-view-only">
 
 <header>
   <h1>🔗 Meus Links</h1>
@@ -349,6 +371,11 @@ button {
   <!-- Categorias -->
   <div class="grid" id="linkContainer"></div>
 </div>
+
+<!-- Botão flutuante para alternar modo admin (funciona no celular também) -->
+<button id="adminToggleFab" onclick="alternarModoAdmin()" title="Alternar modo administrador">
+  🛠️
+</button>
 
 <!-- PAINEL ADMIN -->
 <div id="adminPanel">
@@ -379,19 +406,17 @@ button {
       Backup / sincronização manual:
     </div>
 
-    <button class="small-btn btn-export" type="button" onclick="exportarJSON()">
-      ⬇️ Exportar (.json)
-    </button>
+    <button class="small-btn btn-export" type="button" onclick="exportarJSON()">Download JSON</button>
 
-    <label for="importFile" class="small-btn btn-import">⬆️ Importar (.json)</label>
+    <label for="importFile" class="small-btn btn-import">Upload JSON</label>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarJSON(event)">
-
-    <button class="small-btn btn-copy" type="button" onclick="copiarJSON()">
-      📋 Copiar JSON
-    </button>
 
     <button class="small-btn btn-cloud" type="button" onclick="forcarSincronizacao()">
       Baixar do Git
+    </button>
+
+    <button class="small-btn btn-cloud" type="button" onclick="enviarParaGit()">
+      Enviar p/ Git
     </button>
 
     <button id="btnInstallPWA" class="small-btn" type="button"
@@ -421,16 +446,24 @@ button {
 <!-- TOAST -->
 <div id="toast"></div>
 
+<!-- =================== PARTE DO JAVASCRIPT / LÓGICA =================== -->
 <script>
-// =================== PARTE DO JS ===================
-// ===================================================
-// ===== PARTE DE CONFIG / JSON REMOTO / GITHUB ======
-// ===================================================
+// =============================================================
+// ============ PARTE DE CONFIG / JSON REMOTO / GITHUB ==========
+// =============================================================
 // ===== CONFIGURAÇÃO DO JSON REMOTO (PULL) =====
-const ONEDRIVE_JSON_URL = "https://raw.githubusercontent.com/rafaschmidt2025/meus_links/main/meus_links.json";
+const ONEDRIVE_JSON_URL = "https://raw.githubusercontent.com/rafaschmidt2025/meus_links/refs/heads/main/meus_links.json";
 
 // chave onde a versão fica armazenada dentro do JSON
 const JSON_VERSION_KEY = "__versao";
+
+// ===== CONFIG GITHUB (PUSH) =====
+const GITHUB_OWNER = "rafaschmidt2025";
+const GITHUB_REPO  = "meus_links";
+const GITHUB_FILE_PATH = "meus_links.json";
+
+// ⚠️ TROCAR LOCALMENTE PELO TOKEN REAL (NÃO COMITAR EM REPO PÚBLICO)
+const GITHUB_TOKEN = "rafael";
 
 // ===== CACHE DE FAVICONS =====
 let faviconCache = {};
@@ -469,19 +502,29 @@ window.addEventListener("beforeinstallprompt", (e) => {
   if (btn) btn.style.display = "inline-block";
 });
 
-async function instalarPWA() {
-  if (!deferredPrompt) return;
+async function instalarPWA(){
+  if (!deferredPrompt){
+    alert("Se o navegador suportar, use 'Adicionar à tela inicial' no menu do navegador.");
+    return;
+  }
   deferredPrompt.prompt();
-  const result = await deferredPrompt.userChoice;
-  if (result.outcome === "accepted") {
-    showToast("App adicionado à tela inicial.");
+  const choice = await deferredPrompt.userChoice;
+  if (choice && choice.outcome === "accepted") {
+    showToast("Instalação iniciada. Verifique a tela inicial do seu dispositivo.");
   }
   deferredPrompt = null;
   const btn = document.getElementById("btnInstallPWA");
   if (btn) btn.style.display = "none";
 }
 
-// Se não tiver dados, tenta carregar do remoto (primeira vez apenas)
+// Service Worker para PWA
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+// se não tiver dados, tenta carregar do remoto (primeira vez apenas)
 if (!dados || Object.keys(dados).length === 0) {
   carregarDeOneDrive(true); // auto, sem comparar versão (primeira carga)
 }
@@ -497,19 +540,24 @@ function aplicarModoAdmin(){
   }
 }
 
+// alternar modo admin (usado pelo FAB e pelo atalho)
+function alternarModoAdmin(){
+  isAdmin = !isAdmin;
+  localStorage.setItem("meusLinksIsAdmin", JSON.stringify(isAdmin));
+  aplicarModoAdmin();
+}
+
 // atalho Ctrl+Shift+A para alternar modo
 document.addEventListener("keydown", function(e){
   if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
     e.preventDefault();
-    isAdmin = !isAdmin;
-    localStorage.setItem("meusLinksIsAdmin", JSON.stringify(isAdmin));
-    aplicarModoAdmin();
+    alternarModoAdmin();
   }
 });
 
 // abrir/fechar painel
 function abrirAdmin(){
-  if (!isAdmin) return; // segurança extra
+  if (!isAdmin) return; // segurança: só admin
   document.getElementById("adminPanel").style.display="flex";
 
   setTimeout(() => {
@@ -545,187 +593,86 @@ function showToast(msg){
 function contarLinksTotais(){
   let total = 0;
   for (const cat in dados) {
-    total += dados[cat].length;
+    if (cat === JSON_VERSION_KEY) continue;
+    const arr = dados[cat];
+    if (Array.isArray(arr)) total += arr.length;
   }
   return total;
 }
 
-function formatarData(timestamp){
-  if (!timestamp) return "Nunca";
-  const d = new Date(timestamp);
-  return d.toLocaleString("pt-BR");
+function formatarDataHora(timestamp){
+  if (!timestamp) return "nunca";
+  try {
+    return new Date(timestamp).toLocaleString("pt-BR");
+  } catch {
+    return "nunca";
+  }
 }
 
-// atualiza texto do rodapé de info de sincronização
 function atualizarInfoSincronizacao(){
   const el = document.getElementById("syncInfo");
   if (!el) return;
-
   const totalLinks = contarLinksTotais();
-  const localVersao  = dadosVersao || 0;
-  const remoteVersao = remoteLastVersao || 0;
-
-  let texto = `Links locais: ${totalLinks} · Versão local: ${localVersao}`;
-
-  if (remoteVersao) {
-    texto += ` · Versão remota conhecida: ${remoteVersao}`;
-  }
-
-  if (remoteLastSync) {
-    texto += ` · Última sync: ${formatarData(remoteLastSync)}`;
-  }
-
-  el.textContent = texto;
+  el.textContent =
+    "Última sincronização remota: " + formatarDataHora(remoteLastSync) +
+    " • Versão remota conhecida: " + (remoteLastVersao || "—") +
+    " • Links atuais: " + totalLinks;
 }
 
-// ===== FUNÇÕES DE BACKUP LOCAL / EXPORT / IMPORT =====
-
-function exportarJSON(){
-  const dataStr = JSON.stringify(dados, null, 2);
-  const blob = new Blob([dataStr], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "meus_links.json";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast("Arquivo exportado.");
-}
-
-function importarJSON(event){
-  const file = event.target.files[0];
-  if(!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e){
-    try {
-      const json = JSON.parse(e.target.result);
-      if(typeof json === "object" && json !== null){
-        dados = json;
-        localStorage.setItem("meusLinks", JSON.stringify(dados));
-
-        // se o JSON tiver campo de versão, usamos
-        if (JSON_VERSION_KEY in json) {
-          dadosVersao = Number(json[JSON_VERSION_KEY]) || 0;
-        } else {
-          dadosVersao = 0;
-        }
-        localStorage.setItem("meusLinksVersao", String(dadosVersao));
-
-        collapsedCategories = new Set();
-        localStorage.removeItem("meusLinksCategoriasFechadas");
-        lastCategory = "";
-        localStorage.removeItem("meusLinksUltimaCategoria");
-        renderizar();
-        atualizarListaCategorias();
-        atualizarInfoSincronizacao();
-        showToast("Links importados com sucesso.");
-      } else {
-        alert("Arquivo JSON inválido.");
-      }
-    } catch(err){
-      alert("Erro ao ler o arquivo. Verifique se é um JSON válido.");
-    }
-  };
-  reader.readAsText(file);
-  event.target.value = "";
-}
-
-function copiarJSON(){
-  const data = JSON.stringify(dados, null, 2);
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(data)
-      .then(() => showToast("JSON copiado para a área de transferência."))
-      .catch(() => alert("Não foi possível copiar automaticamente. Cole manualmente."));
-  } else {
-    alert("Seu navegador não permite cópia automática. Copie manualmente do console.");
-  }
-}
-
-// botão do painel admin (pull)
-function forcarSincronizacao(){
-  carregarDeOneDrive(false, true); // manual, só se versão remota for mais recente
-}
-
-// tenta carregar JSON diretamente do servidor (GitHub raw)
-// auto = true → chamado na inicialização
-// apenasSeMaisRecente = true → só substitui se a versão remota for maior
-async function carregarDeOneDrive(auto = false, apenasSeMaisRecente = false){
-  if (!ONEDRIVE_JSON_URL) {
-    if (!auto) {
-      alert("Configure o ONEDRIVE_JSON_URL no código com o link público do JSON.");
-    }
-    return;
-  }
-
-  // cache inteligente: evita chamadas em sequência muito rápidas
-  if (!auto) {
-    const now = Date.now();
-    const lastCheck = Number(localStorage.getItem("meusLinksRemoteLastCheck") || "0");
-    const intervaloMs = 5000; // 5s
-    if (now - lastCheck < intervaloMs) {
-      showToast("Você acabou de sincronizar. Aguarde alguns segundos antes de tentar novamente.");
-      return;
-    }
-    localStorage.setItem("meusLinksRemoteLastCheck", String(now));
-  }
-
+// ===== FAVICONS =====
+function salvarFaviconCache(){
   try {
-    const urlComBypass =
-      ONEDRIVE_JSON_URL + (ONEDRIVE_JSON_URL.includes("?") ? "&" : "?") +
-      "_t=" + Date.now();
-
-    const resp = await fetch(urlComBypass);
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const jsonRemoto = await resp.json();
-
-    if (typeof jsonRemoto !== "object" || jsonRemoto === null) {
-      throw new Error("JSON remoto inválido");
-    }
-
-    let versaoRemota = 0;
-    if (JSON_VERSION_KEY in jsonRemoto) {
-      versaoRemota = Number(jsonRemoto[JSON_VERSION_KEY]) || 0;
-    }
-
-    if (apenasSeMaisRecente && versaoRemota && versaoRemota <= dadosVersao) {
-      showToast(
-        "Versão remota (" + versaoRemota + ") não é mais recente que a local (" +
-        dadosVersao + "). Nada foi alterado."
-      );
-      return;
-    }
-
-    dados = jsonRemoto;
-    localStorage.setItem("meusLinks", JSON.stringify(dados));
-
-    dadosVersao = versaoRemota || 0;
-    localStorage.setItem("meusLinksVersao", String(dadosVersao));
-
-    collapsedCategories = new Set();
-    localStorage.removeItem("meusLinksCategoriasFechadas");
-    lastCategory = "";
-    localStorage.removeItem("meusLinksUltimaCategoria");
-
-    remoteLastSync = Date.now();
-    remoteLastVersao = versaoRemota || 0;
-    localStorage.setItem("meusLinksRemoteLastSync", String(remoteLastSync));
-    localStorage.setItem("meusLinksRemoteLastVersao", String(remoteLastVersao));
-
-    renderizar();
-    atualizarListaCategorias();
-    atualizarInfoSincronizacao();
-    showToast("Links carregados do Git com sucesso.");
-  } catch (err){
-    if (!auto) {
-      alert("Erro ao carregar do Git: " + err.message);
-    }
+    localStorage.setItem("meusLinksFavicons", JSON.stringify(faviconCache));
+  } catch(e) {
+    // se der erro de quota, ignora
   }
 }
 
-// ===== RESTO DAS FUNÇÕES (renderizar, editar, etc.) =====
+function extrairDominio(url){
+  try {
+    return new URL(url).hostname;
+  } catch(e){
+    const match = String(url).match(/https?:\/\/([^/]+)/i);
+    return match ? match[1] : String(url);
+  }
+}
+
+function carregarFavicons(){
+  const imgs = document.querySelectorAll("img.favicon-img");
+  const agora = Date.now();
+  const expMs = FAVICON_CACHE_DIAS * 24*60*60*1000;
+
+  imgs.forEach(img => {
+    const domain = img.dataset.domain;
+    if (!domain) return;
+
+    const cached = faviconCache[domain];
+    if (cached && (agora - cached.ts < expMs) && cached.dataUrl) {
+      img.src = cached.dataUrl;
+      return;
+    }
+
+    const url = "https://www.google.com/s2/favicons?domain=" +
+      encodeURIComponent(domain) + "&sz=32";
+
+    fetch(url)
+      .then(resp => resp.blob())
+      .then(blob => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }))
+      .then(dataUrl => {
+        faviconCache[domain] = { dataUrl, ts: agora };
+        salvarFaviconCache();
+        img.src = dataUrl;
+      })
+      .catch(() => {
+        img.src = url; // fallback
+      });
+  });
+}
 
 // salva link
 function salvar(){
@@ -775,11 +722,6 @@ function salvar(){
     dados[categoriaChave].push({nome, url, desc, favorito:false});
   }
 
-  // incrementa "versão local" sempre que altera algo
-  dadosVersao = (dadosVersao || 0) + 1;
-  dados[JSON_VERSION_KEY] = dadosVersao;
-  localStorage.setItem("meusLinksVersao", String(dadosVersao));
-
   localStorage.setItem("meusLinks", JSON.stringify(dados));
   lastCategory = categoriaChave;
   localStorage.setItem("meusLinksUltimaCategoria", lastCategory);
@@ -792,7 +734,6 @@ function salvar(){
   fecharAdmin();
   renderizar();
   atualizarListaCategorias();
-  atualizarInfoSincronizacao();
   showToast(msgToast);
 }
 
@@ -825,6 +766,10 @@ function abrirMenu(event, categoria, index){
 // MENU DE CATEGORIA
 function abrirMenuCategoria(event, categoria){
   event.stopPropagation();
+  if (categoria === "⭐ Favoritos") {
+    // categoria especial não tem menu próprio
+    return;
+  }
   fecharMenus();
   const menu = document.getElementById("categoryMenu");
   menu.style.display = "block";
@@ -867,14 +812,9 @@ function apagarLink(){
     if (dados[cat].length === 0) {
       delete dados[cat];
     }
-    dadosVersao = (dadosVersao || 0) + 1;
-    dados[JSON_VERSION_KEY] = dadosVersao;
-    localStorage.setItem("meusLinksVersao", String(dadosVersao));
-
     localStorage.setItem("meusLinks", JSON.stringify(dados));
     renderizar();
     atualizarListaCategorias();
-    atualizarInfoSincronizacao();
     showToast("Link apagado.");
   }
   fecharMenus();
@@ -903,56 +843,60 @@ function adicionarLinkCategoria(){
   }, 50);
 }
 
-// renomear categoria
+// renomear categoria (com merge se já existir)
 function renomearCategoria(){
   const menu = document.getElementById("categoryMenu");
-  const categoriaAntiga = menu.dataset.categoria;
+  const categoria = menu.dataset.categoria;
+  if (!categoria) return;
 
-  const novaCategoria = prompt(
-    "Digite o novo nome para a categoria:",
-    categoriaAntiga
-  );
-
-  if (!novaCategoria || novaCategoria.trim() === categoriaAntiga) {
+  const novoNome = prompt("Novo nome para a categoria:", categoria);
+  if (!novoNome) {
     fecharMenus();
     return;
   }
 
-  const novoNome = novaCategoria.trim();
-  if (dados[novoNome] && novoNome !== categoriaAntiga) {
-    alert("Já existe uma categoria com esse nome.");
+  const nomeTrim = novoNome.trim();
+  if (!nomeTrim || nomeTrim.toLowerCase() === categoria.toLowerCase()) {
     fecharMenus();
     return;
   }
 
-  dados[novoNome] = dados[categoriaAntiga];
-  delete dados[categoriaAntiga];
+  let alvo = nomeTrim;
+  // se já existir categoria com mesmo nome (case-insensitive), usa a chave existente
+  for (const cat in dados) {
+    if (cat.toLowerCase() === nomeTrim.toLowerCase()) {
+      alvo = cat;
+      break;
+    }
+  }
 
-  if (lastCategory === categoriaAntiga) {
-    lastCategory = novoNome;
+  // merge
+  if (!dados[alvo]) {
+    dados[alvo] = [];
+  }
+  dados[alvo] = dados[alvo].concat(dados[categoria] || []);
+  delete dados[categoria];
+
+  // ajusta últimas configs
+  if (lastCategory === categoria) {
+    lastCategory = alvo;
     localStorage.setItem("meusLinksUltimaCategoria", lastCategory);
   }
 
-  if (collapsedCategories.has(categoriaAntiga)) {
-    collapsedCategories.delete(categoriaAntiga);
-    collapsedCategories.add(novoNome);
+  if (collapsedCategories.has(categoria)) {
+    collapsedCategories.delete(categoria);
+    collapsedCategories.add(alvo);
     localStorage.setItem(
       "meusLinksCategoriasFechadas",
       JSON.stringify(Array.from(collapsedCategories))
     );
   }
 
-  dadosVersao = (dadosVersao || 0) + 1;
-  dados[JSON_VERSION_KEY] = dadosVersao;
-  localStorage.setItem("meusLinksVersao", String(dadosVersao));
-
   localStorage.setItem("meusLinks", JSON.stringify(dados));
-
   fecharMenus();
   renderizar();
   atualizarListaCategorias();
-  atualizarInfoSincronizacao();
-  showToast("Categoria renomeada.");
+  showToast(`Categoria renomeada para "${alvo}".`);
 }
 
 // ação do menu de categoria: excluir categoria inteira
@@ -975,10 +919,6 @@ function excluirCategoria(){
   }
 
   delete dados[categoria];
-  dadosVersao = (dadosVersao || 0) + 1;
-  dados[JSON_VERSION_KEY] = dadosVersao;
-  localStorage.setItem("meusLinksVersao", String(dadosVersao));
-
   localStorage.setItem("meusLinks", JSON.stringify(dados));
 
   if (lastCategory === categoria) {
@@ -997,7 +937,6 @@ function excluirCategoria(){
   fecharMenus();
   renderizar();
   atualizarListaCategorias();
-  atualizarInfoSincronizacao();
   showToast("Categoria excluída.");
 }
 
@@ -1046,9 +985,73 @@ function renderizar(){
   const container = document.getElementById("linkContainer");
   container.innerHTML = "";
 
-  const categorias = Object.keys(dados).sort((a,b) => a.localeCompare(b, "pt-BR"));
+  const categoriasBase = Object.keys(dados)
+    .filter(c => c !== JSON_VERSION_KEY)
+    .sort((a,b) => a.localeCompare(b, "pt-BR"));
 
-  categorias.forEach(categoria => {
+  // monta lista global de favoritos (para categoria especial)
+  const favoritosGlobais = [];
+  categoriasBase.forEach(categoria => {
+    const arr = dados[categoria] || [];
+    arr.forEach((link, idx) => {
+      if (link.favorito) {
+        favoritosGlobais.push({
+          categoria,
+          index: idx,
+          link
+        });
+      }
+    });
+  });
+
+  // Categoria especial "⭐ Favoritos"
+  if (favoritosGlobais.length > 0) {
+    const colFav = document.createElement("div");
+    colFav.className = "category";
+
+    const collapsedFav = collapsedCategories.has("⭐ Favoritos");
+    const arrowFav = collapsedFav ? "▸" : "▾";
+
+    let htmlFav = `
+      <div class="category-header">
+        <span class="category-title" onclick="toggleCategoria('⭐ Favoritos')">⭐ Favoritos</span>
+        <div class="category-right">
+          <span class="category-arrow" onclick="toggleCategoria('⭐ Favoritos')">${arrowFav}</span>
+        </div>
+      </div>
+      <div class="category-body" style="display:${collapsedFav ? "none" : "block"};">
+    `;
+
+    favoritosGlobais.sort((a,b) =>
+      a.link.nome.localeCompare(b.link.nome, "pt-BR")
+    );
+
+    favoritosGlobais.forEach(item => {
+      const dominio = extrairDominio(item.link.url);
+      const favClass = item.link.favorito ? "favorite-btn favorito" : "favorite-btn";
+      const catLabel = item.categoria;
+
+      htmlFav += `
+        <div class="link-card" onclick="abrirLink('${item.link.url}')">
+          <img class="favicon-img" data-domain="${dominio}" alt="">
+          <div class="link-content">
+            <strong>${item.link.nome}</strong>
+            <p>${item.link.desc || ""}</p>
+            <p style="margin-top:2px; font-size:11px; color:#9ca3af;">Categoria: ${catLabel}</p>
+          </div>
+          <span class="${favClass}" onclick="toggleFavorito(event, '${item.categoria.replace(/'/g,"\\'")}', ${item.index})">★</span>
+          <span class="link-menu-btn" onclick="abrirMenu(event, '${item.categoria.replace(/'/g,"\\'")}', ${item.index})">&#8942;</span>
+        </div>
+      `;
+    });
+
+    htmlFav += "</div>";
+    colFav.innerHTML = htmlFav;
+    container.appendChild(colFav);
+  }
+
+  // categorias normais
+  categoriasBase.forEach(categoria => {
     const col = document.createElement("div");
     col.className = "category";
 
@@ -1058,7 +1061,7 @@ function renderizar(){
     const linksOrdenados = [...dados[categoria]].map((l,idx) => ({...l, _idx:idx}));
     linksOrdenados.sort((a,b) => {
       if ((a.favorito===true) !== (b.favorito===true)) {
-        return a.favorito ? -1 : 1;
+        return a.favorito ? -1 : 1; // favoritos primeiro
       }
       return a.nome.localeCompare(b.nome,"pt-BR");
     });
@@ -1076,20 +1079,12 @@ function renderizar(){
 
     linksOrdenados.forEach(link => {
       const indexOriginal = link._idx;
-      const faviconKey = new URL(link.url).origin;
-      let favicon = faviconCache[faviconKey];
-
-      if (!favicon) {
-        favicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(link.url)}`;
-        faviconCache[faviconKey] = favicon;
-        localStorage.setItem("meusLinksFavicons", JSON.stringify(faviconCache));
-      }
-
+      const dominio = extrairDominio(link.url);
       const favClass = link.favorito ? "favorite-btn favorito" : "favorite-btn";
 
       html += `
       <div class="link-card" onclick="abrirLink('${link.url}')">
-        <img src="${favicon}" alt="">
+        <img class="favicon-img" data-domain="${dominio}" alt="">
         <div class="link-content">
           <strong>${link.nome}</strong>
           <p>${link.desc || ""}</p>
@@ -1108,6 +1103,9 @@ function renderizar(){
   if (document.getElementById("searchInput").value.trim() !== "") {
     filtrar();
   }
+
+  carregarFavicons();
+  atualizarInfoSincronizacao();
 }
 
 // datalist de categorias
@@ -1116,7 +1114,9 @@ function atualizarListaCategorias(){
   if (!datalist) return;
 
   datalist.innerHTML = "";
-  const categorias = Object.keys(dados).sort((a,b) => a.localeCompare(b, "pt-BR"));
+  const categorias = Object.keys(dados)
+    .filter(c => c !== JSON_VERSION_KEY)
+    .sort((a,b) => a.localeCompare(b, "pt-BR"));
 
   categorias.forEach(cat => {
     const opt = document.createElement("option");
@@ -1152,21 +1152,367 @@ document.addEventListener("click", function(e){
   }
 });
 
-// inicialização
+// ===== IMPORT / EXPORT / SYNC / PUSH =====
+
+function exportarJSON(){
+  // garante que exista alguma versão
+  if (!dadosVersao || Number.isNaN(dadosVersao)) {
+    dadosVersao = 1;
+    localStorage.setItem("meusLinksVersao", String(dadosVersao));
+  }
+
+  const objetoExport = Object.assign(
+    {},
+    { [JSON_VERSION_KEY]: dadosVersao },
+    dados
+  );
+
+  const dataStr = JSON.stringify(objetoExport, null, 2);
+  const blob = new Blob([dataStr], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "meus_links.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("Arquivo exportado.");
+}
+
+function importarJSON(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const json = JSON.parse(e.target.result);
+      if(typeof json === "object" && json !== null){
+        const versaoArquivo = Number(json[JSON_VERSION_KEY] || "0");
+        if (versaoArquivo) {
+          dadosVersao = versaoArquivo;
+          localStorage.setItem("meusLinksVersao", String(dadosVersao));
+          remoteLastVersao = versaoArquivo;
+        }
+
+        // remove chave de versão do objeto de dados
+        delete json[JSON_VERSION_KEY];
+
+        dados = json;
+        localStorage.setItem("meusLinks", JSON.stringify(dados));
+        collapsedCategories = new Set();
+        localStorage.removeItem("meusLinksCategoriasFechadas");
+        lastCategory = "";
+        localStorage.removeItem("meusLinksUltimaCategoria");
+        renderizar();
+        atualizarListaCategorias();
+        showToast("Links importados com sucesso.");
+      } else {
+        alert("Arquivo JSON inválido.");
+      }
+    } catch(err){
+      alert("Erro ao ler o arquivo. Verifique se é um JSON válido.");
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+// botão do painel admin (pull)
+function forcarSincronizacao(){
+  carregarDeOneDrive(false, true); // manual, só se versão remota for mais recente
+}
+
+// PUSH para GitHub (envia JSON atualizado)
+async function enviarParaGit(){
+  if (!GITHUB_TOKEN || GITHUB_TOKEN === "COLOQUE_SEU_TOKEN_AQUI") {
+    alert("Configure o GITHUB_TOKEN no código antes de enviar para o Git.");
+    return;
+  }
+
+  // 1) Antes de enviar, checa se existe versão remota mais nova (prevenir perda de dados)
+  try {
+    if (ONEDRIVE_JSON_URL) {
+      const urlCheck =
+        ONEDRIVE_JSON_URL + (ONEDRIVE_JSON_URL.includes("?") ? "&" : "?") +
+        "_t_conflict=" + Date.now();
+
+      const respCheck = await fetch(urlCheck);
+      if (respCheck.ok) {
+        const jsonRemote = await respCheck.json();
+        const versaoRemota = Number(jsonRemote[JSON_VERSION_KEY] || "0");
+        if (versaoRemota && versaoRemota > dadosVersao) {
+          alert(
+            "Existe uma versão mais recente no Git (versão " + versaoRemota +
+            ") do que a sua local (versão " + dadosVersao + ").\n\n" +
+            "Clique em 'Baixar do Git' primeiro para sincronizar, e depois tente enviar novamente."
+          );
+          return;
+        }
+      }
+    }
+  } catch(e) {
+    // se falhar a checagem, segue; se quiser ser mais rígido, pode bloquear aqui
+  }
+
+  // 2) incrementa versão para snapshot nova
+  if (!dadosVersao || Number.isNaN(dadosVersao)) {
+    dadosVersao = 1;
+  } else {
+    dadosVersao++;
+  }
+  localStorage.setItem("meusLinksVersao", String(dadosVersao));
+
+  const objetoExport = Object.assign(
+    {},
+    { [JSON_VERSION_KEY]: dadosVersao },
+    dados
+  );
+
+  const jsonStr = JSON.stringify(objetoExport, null, 2);
+  const conteudoBase64 = btoa(unescape(encodeURIComponent(jsonStr)));
+
+  const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+
+  let shaAtual = null;
+
+  try {
+    // obtém SHA atual (se arquivo já existir)
+    const respGet = await fetch(url, {
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": `Bearer ${GITHUB_TOKEN}`
+      }
+    });
+
+    if (respGet.status === 200) {
+      const json = await respGet.json();
+      shaAtual = json.sha;
+    } else if (respGet.status !== 404) {
+      const text = await respGet.text();
+      throw new Error("Erro ao obter SHA: HTTP " + respGet.status + " - " + text);
+    }
+
+    // cria/atualiza arquivo
+    const respPut = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Accept": "application/vnd.github+json",
+        "Authorization": `Bearer ${GITHUB_TOKEN}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: `Atualiza meus_links via app (${new Date().toISOString()})`,
+        content: conteudoBase64,
+        sha: shaAtual || undefined
+      })
+    });
+
+    if (!respPut.ok) {
+      const erro = await respPut.text();
+      throw new Error("HTTP " + respPut.status + " - " + erro);
+    }
+
+    // atualiza info de sync remota
+    remoteLastSync = Date.now();
+    remoteLastVersao = dadosVersao;
+    localStorage.setItem("meusLinksRemoteLastSync", String(remoteLastSync));
+    localStorage.setItem("meusLinksRemoteLastVersao", String(remoteLastVersao));
+
+    showToast("JSON enviado para o GitHub com sucesso.");
+    atualizarInfoSincronizacao();
+  } catch (err) {
+    alert("Erro ao enviar para o GitHub: " + err.message);
+  }
+}
+
+// tenta carregar JSON diretamente do servidor (GitHub raw)
+// auto = true → chamado na inicialização
+// apenasSeMaisRecente = true → só substitui se a versão remota for maior
+async function carregarDeOneDrive(auto = false, apenasSeMaisRecente = false){
+  if (!ONEDRIVE_JSON_URL) {
+    if (!auto) {
+      alert("Configure o ONEDRIVE_JSON_URL no código com o link público do JSON.");
+    }
+    return;
+  }
+
+  // cache inteligente: evita chamadas em sequência muito rápidas
+  if (!auto) {
+    const now = Date.now();
+    const lastCheck = Number(localStorage.getItem("meusLinksRemoteLastCheck") || "0");
+    const intervaloMs = 5000; // 5s
+    if (now - lastCheck < intervaloMs) {
+      showToast("Você acabou de sincronizar. Aguarde alguns segundos antes de tentar novamente.");
+      return;
+    }
+    localStorage.setItem("meusLinksRemoteLastCheck", String(now));
+  }
+
+  try {
+    const urlComCacheBust =
+      ONEDRIVE_JSON_URL + (ONEDRIVE_JSON_URL.includes("?") ? "&" : "?") + "_t=" + Date.now();
+
+    const resp = await fetch(urlComCacheBust);
+
+    // tratamento específico pra 429
+    if (resp.status === 429) {
+      if (!auto) {
+        alert("O servidor do JSON está limitando o número de acessos (HTTP 429). Tente novamente mais tarde.");
+      }
+      return;
+    }
+
+    if (!resp.ok) {
+      throw new Error("HTTP " + resp.status);
+    }
+
+    const json = await resp.json();
+    if (typeof json !== "object" || json === null) {
+      throw new Error("JSON inválido");
+    }
+
+    const versaoRemota = Number(json[JSON_VERSION_KEY] || "0");
+
+    if (apenasSeMaisRecente && versaoRemota && dadosVersao && versaoRemota <= dadosVersao) {
+      if (!auto) {
+        showToast("JSON remoto não é mais recente que o local.");
+      }
+      return;
+    }
+
+    if (versaoRemota) {
+      dadosVersao = versaoRemota;
+      localStorage.setItem("meusLinksVersao", String(dadosVersao));
+      remoteLastVersao = versaoRemota;
+    }
+
+    delete json[JSON_VERSION_KEY];
+
+    dados = json;
+    localStorage.setItem("meusLinks", JSON.stringify(dados));
+    collapsedCategories = new Set();
+    localStorage.removeItem("meusLinksCategoriasFechadas");
+    lastCategory = "";
+    localStorage.removeItem("meusLinksUltimaCategoria");
+
+    // atualiza info de sync remota
+    remoteLastSync = Date.now();
+    localStorage.setItem("meusLinksRemoteLastSync", String(remoteLastSync));
+    localStorage.setItem("meusLinksRemoteLastVersao", String(remoteLastVersao));
+
+    renderizar();
+    atualizarListaCategorias();
+    showToast("Links carregados do servidor.");
+  } catch (err){
+    if (!auto) {
+      alert("Erro ao carregar do servidor: " + err.message);
+    }
+  }
+}
+
 // inicialização
 renderizar();
 atualizarListaCategorias();
 configurarEnter();
-aplicarModoAdmin(); // aplica modo admin/leitura ao abrir
-
-// Se não houver nada salvo localmente, carrega do Git automaticamente
-if (!dados || Object.keys(dados).length === 0) {
-  carregarDeOneDrive();
-}
-
+aplicarModoAdmin(); // aplica modo leitura/admin ao abrir
+atualizarInfoSincronizacao();
 </script>
+
+<script type="module">
+  // 1. Importa Firebase e Firestore pelo CDN
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  // 2. COLE AQUI o firebaseConfig que o console do Firebase te mostrou
+  const firebaseConfig = {
+   apiKey: "AIzaSyBgNMLV6ecHc1bqJfGky5dxLUSCkkUxnDg",
+    authDomain: "rafa-links.firebaseapp.com",
+    projectId: "rafa-links",
+    storageBucket: "rafa-links.firebasestorage.app",
+    messagingSenderId: "47390718880",
+    appId: "1:47390718880:web:269619010ee97045df42c5",
+    measurementId: "G-WSD6M2ZJ5E"
+  };
+
+  // 3. Inicializa Firebase e Firestore
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Usaremos um único documento: coleção "painelLinks", documento "principal"
+  const docRef = doc(db, "painelLinks", "principal");
+
+  // 4. Carregar do Firestore na abertura
+  async function carregarDoFirestoreInicial() {
+    try {
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const dadosRemotos = snap.data();
+        window.dados = dadosRemotos;
+        localStorage.setItem("meusLinks", JSON.stringify(dadosRemotos));
+
+        if (window.renderizar) window.renderizar();
+        if (window.atualizarListaCategorias) window.atualizarListaCategorias();
+        if (window.showToast) window.showToast("Links carregados da nuvem (Firestore).");
+      } else {
+        console.log("Documento painelLinks/principal ainda não existe. Ele será criado quando você salvar.");
+      }
+    } catch (e) {
+      console.error("Erro ao carregar do Firestore", e);
+      if (window.showToast) window.showToast("Erro ao carregar da nuvem.");
+    }
+  }
+
+  // 5. Salvar no Firestore sempre que algo mudar
+  async function salvarNoFirestore() {
+    try {
+      if (!window.dados) return;
+      await setDoc(docRef, window.dados);
+      console.log("Dados salvos no Firestore");
+    } catch (e) {
+      console.error("Erro ao salvar no Firestore", e);
+      if (window.showToast) window.showToast("Erro ao salvar na nuvem.");
+    }
+  }
+
+  // 6. Escutar mudanças em tempo real (PC1 ↔ PC2)
+  onSnapshot(docRef, (snap) => {
+    if (!snap.exists()) return;
+    const dadosRemotos = snap.data();
+
+    const localStr = JSON.stringify(window.dados || {});
+    const remotoStr = JSON.stringify(dadosRemotos);
+    if (localStr === remotoStr) return; // evita loop
+
+    window.dados = dadosRemotos;
+    localStorage.setItem("meusLinks", JSON.stringify(dadosRemotos));
+
+    if (window.renderizar) window.renderizar();
+    if (window.atualizarListaCategorias) window.atualizarListaCategorias();
+    if (window.showToast) window.showToast("Atualizado pela nuvem (outro dispositivo).");
+  });
+
+  // 7. Enrolar funções existentes para salvar no Firestore depois de mudar algo
+  function wrap(nomeFunc) {
+    const original = window[nomeFunc];
+    if (typeof original !== "function") return;
+    window[nomeFunc] = async function(...args) {
+      const resultado = original.apply(this, args);
+      try { await salvarNoFirestore(); } catch(e) {}
+      return resultado;
+    };
+  }
+
+  // Essas funções existem no seu JS e alteram "dados"
+  wrap("salvar");
+  wrap("apagarLink");
+  wrap("excluirCategoria");
+
+  // 8. Chamada inicial: ao abrir a página, tenta carregar da nuvem
+  carregarDoFirestoreInicial();
+</script>
+
 
 </body>
 </html>
-
-
