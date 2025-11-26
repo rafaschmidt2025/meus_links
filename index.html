@@ -1153,13 +1153,20 @@ document.addEventListener("click", function(e){
 });
 
 // inicialização
+// inicialização
 renderizar();
 atualizarListaCategorias();
 configurarEnter();
-aplicarModoAdmin(); // aplica modo leitura/admin ao abrir
-atualizarInfoSincronizacao();
+aplicarModoAdmin(); // aplica modo admin/leitura ao abrir
+
+// Se não houver nada salvo localmente, carrega do Git automaticamente
+if (!dados || Object.keys(dados).length === 0) {
+  carregarDeOneDrive();
+}
+
 </script>
 
 </body>
 </html>
+
 
