@@ -1467,16 +1467,23 @@ atualizarInfoSincronizacao();
   }
 
   // 5. Salvar no Firestore sempre que algo mudar
-  async function salvarNoFirestore() {
+ async function salvarNoFirestore() {
+    console.log("[Firestore] salvarNoFirestore chamado");
     try {
-      if (!window.dados) return;
+      if (!window.dados) {
+        console.log("[Firestore] sem window.dados, nada para salvar");
+        return;
+      }
       await setDoc(docRef, window.dados);
-      console.log("Dados salvos no Firestore");
+      console.log("[Firestore] Dados salvos no Firestore com sucesso");
     } catch (e) {
-      console.error("Erro ao salvar no Firestore", e);
+      console.error("[Firestore] Erro ao salvar no Firestore", e);
       if (window.showToast) window.showToast("Erro ao salvar na nuvem.");
     }
   }
+
+  // expõe no window só pra debug no console
+  window.salvarNoFirestore = salvarNoFirestore;
 
   // 6. Escutar mudanças em tempo real (PC1 ↔ PC2)
   onSnapshot(docRef, (snap) => {
@@ -1517,3 +1524,4 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
