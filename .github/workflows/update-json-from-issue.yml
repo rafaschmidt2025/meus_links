@@ -1,12 +1,12 @@
-name: atualizar-json
+name: Atualizar meus_links.json a partir de Issue
 
 on:
   issues:
     types: [opened, edited]
 
 permissions:
-  contents: write   # para fazer commit
-  issues: write     # para comentar e fechar o issue
+  contents: write   # para commit/push
+  issues: write     # para comentar/fechar o issue
 
 jobs:
   atualizar-json:
@@ -18,13 +18,12 @@ jobs:
         with:
           ref: main
 
-      - name: Criar script Node temporário
+      - name: Extrair JSON do Issue e salvar em meus_links.json
         run: |
-          cat << 'EOF' > extract.js
+          node - << 'EOF'
           const fs = require("fs");
           const path = require("path");
 
-          // Caminho do evento (fornecido pelo GitHub Actions)
           const eventPath = process.env.GITHUB_EVENT_PATH;
           if (!eventPath) {
             throw new Error("GITHUB_EVENT_PATH não definido.");
@@ -32,7 +31,6 @@ jobs:
 
           const event = JSON.parse(fs.readFileSync(eventPath, "utf8"));
 
-          // Corpo do Issue
           const body =
             (event.issue && event.issue.body) ||
             (event.pull_request && event.pull_request.body) ||
@@ -42,7 +40,7 @@ jobs:
             throw new Error("Corpo do Issue/PR vazio.");
           }
 
-          // Procura um bloco ```json ... ```
+          // Procura bloco ```json ... ```
           const regex = /```json\s*([\s\S]*?)```/i;
           const match = body.match(regex);
 
@@ -67,25 +65,33 @@ jobs:
             throw new Error("Erro ao fazer parse do JSON: " + err.message);
           }
 
+          // Garante que existe __versao (se não vier no Issue)
+          if (typeof data === "object" && data !== null) {
+            if (!Object.prototype.hasOwnProperty.call(data, "__versao")) {
+              data.__versao = 1;
+            }
+          }
+
           const outPath = path.join(process.cwd(), "meus_links.json");
           fs.writeFileSync(outPath, JSON.stringify(data, null, 2), "utf8");
 
           console.log("meus_links.json atualizado com sucesso em:", outPath);
           EOF
 
-      - name: Executar script Node
-        run: node extract.js
+      - name: Verificar se houve alterações
+        id: diffcheck
+        run: |
+          if git diff --quiet -- meus_links.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Commit e push do JSON
+      - name: Commit e push do JSON (se mudou)
+        if: steps.diffcheck.outputs.changed == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Se não houve alteração no arquivo, não commita
-          if git diff --quiet -- meus_links.json; then
-            echo "Nenhuma alteração em meus_links.json. Nada para commitar."
-            exit 0
-          fi
-
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
