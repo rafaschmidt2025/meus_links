@@ -1427,11 +1427,9 @@ atualizarInfoSincronizacao();
 </script>
 
 <script type="module">
-  // 1. Importa Firebase e Firestore pelo CDN
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
   import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-  // 2. Config Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyBgNMLV6ecHc1bqJfGky5dxLUSCkkUxnDg",
     authDomain: "rafa-links.firebaseapp.com",
@@ -1442,91 +1440,97 @@ atualizarInfoSincronizacao();
     measurementId: "G-WSD6M2ZJ5E"
   };
 
-  // 3. Inicializa Firebase e Firestore
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
-
-  // Usaremos um único documento: coleção "painelLinks", documento "principal"
   const docRef = doc(db, "painelLinks", "principal");
 
-  // 4. Carregar do Firestore na abertura
-  async function carregarDoFirestoreInicial() {
+  // 🔄 Garantia extra: se window.dados não existir aqui, cria a partir do localStorage
+  if (!window.dados) {
     try {
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const dadosRemotos = snap.data();
-        window.dados = dadosRemotos;
-        localStorage.setItem("meusLinks", JSON.stringify(dadosRemotos));
-
-        if (window.renderizar) window.renderizar();
-        if (window.atualizarListaCategorias) window.atualizarListaCategorias();
-        if (window.showToast) window.showToast("Links carregados da nuvem (Firestore).");
-      } else {
-        console.log("Documento painelLinks/principal ainda não existe. Ele será criado quando você salvar.");
-      }
-    } catch (e) {
-      console.error("Erro ao carregar do Firestore", e);
-      if (window.showToast) window.showToast("Erro ao carregar da nuvem.");
+      window.dados = JSON.parse(localStorage.getItem("meusLinks")) || {};
+    } catch {
+      window.dados = {};
     }
   }
 
-  // 5. Salvar no Firestore sempre que algo mudar
- async function salvarNoFirestore() {
+  async function salvarNoFirestore() {
     console.log("[Firestore] salvarNoFirestore chamado");
     try {
-      if (!window.dados) {
+      if (!window.dados || Object.keys(window.dados).length === 0) {
         console.log("[Firestore] sem window.dados, nada para salvar");
         return;
       }
       await setDoc(docRef, window.dados);
       console.log("[Firestore] Dados salvos no Firestore com sucesso");
+      if (window.showToast) window.showToast("Salvo na nuvem (Firestore).");
     } catch (e) {
       console.error("[Firestore] Erro ao salvar no Firestore", e);
       if (window.showToast) window.showToast("Erro ao salvar na nuvem.");
     }
   }
 
-  // expõe no window só pra debug no console
+  // expõe no window pra debug
   window.salvarNoFirestore = salvarNoFirestore;
 
-  // 6. Escutar mudanças em tempo real (PC1 ↔ PC2)
+  async function carregarDoFirestoreInicial() {
+    try {
+      const snap = await getDoc(docRef);
+      if (snap.exists()) {
+        const dadosRemotos = snap.data();
+        console.log("[Firestore] carregando dados iniciais da nuvem", dadosRemotos);
+        window.dados = dadosRemotos;
+        localStorage.setItem("meusLinks", JSON.stringify(dadosRemotos));
+        if (window.renderizar) window.renderizar();
+        if (window.atualizarListaCategorias) window.atualizarListaCategorias();
+        if (window.showToast) window.showToast("Links carregados da nuvem (Firestore).");
+      } else {
+        console.log("[Firestore] Documento painelLinks/principal ainda não existe. Ele será criado quando você salvar.");
+      }
+    } catch (e) {
+      console.error("[Firestore] Erro ao carregar do Firestore", e);
+      if (window.showToast) window.showToast("Erro ao carregar da nuvem.");
+    }
+  }
+
+  // Escuta em tempo real (PC1 ↔ PC2)
   onSnapshot(docRef, (snap) => {
     if (!snap.exists()) return;
-    const dadosRemotos = snap.data();
 
+    const dadosRemotos = snap.data();
     const localStr = JSON.stringify(window.dados || {});
     const remotoStr = JSON.stringify(dadosRemotos);
-    if (localStr === remotoStr) return; // evita loop
+    if (localStr === remotoStr) return;
 
+    console.log("[Firestore] Atualização recebida da nuvem", dadosRemotos);
     window.dados = dadosRemotos;
     localStorage.setItem("meusLinks", JSON.stringify(dadosRemotos));
-
     if (window.renderizar) window.renderizar();
     if (window.atualizarListaCategorias) window.atualizarListaCategorias();
     if (window.showToast) window.showToast("Atualizado pela nuvem (outro dispositivo).");
   });
 
-  // 7. Enrolar funções existentes para salvar no Firestore depois de mudar algo
+  // Embrulha as funções que alteram dados
   function wrap(nomeFunc) {
     const original = window[nomeFunc];
     if (typeof original !== "function") return;
     window[nomeFunc] = async function(...args) {
       const resultado = original.apply(this, args);
-      try { await salvarNoFirestore(); } catch(e) {}
+      try { await salvarNoFirestore(); } catch (e) {}
       return resultado;
     };
   }
 
-  // Essas funções existem no seu JS e alteram "dados"
   wrap("salvar");
   wrap("apagarLink");
   wrap("excluirCategoria");
 
-  // 8. Chamada inicial: ao abrir a página, tenta carregar da nuvem
+  // Carrega da nuvem ao abrir
   carregarDoFirestoreInicial();
 </script>
 
+
 </body>
 </html>
+
 
 
