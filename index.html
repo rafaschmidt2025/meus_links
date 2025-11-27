@@ -638,7 +638,6 @@ function atualizarInfoSincronizacao(){
 }
 
 // ===== FAVICONS =====
-// ===== FAVICONS =====
 function carregarFavicons() {
   const imgs = document.querySelectorAll("img.favicon-img");
   imgs.forEach(img => {
@@ -650,6 +649,16 @@ function carregarFavicons() {
       encodeURIComponent(domain) +
       "&sz=32";
   });
+}
+
+// garante protocolo https:// quando o usuário digitar sem
+function normalizarUrlParaSalvar(url) {
+  let u = (url || "").trim();
+  if (!u) return "";
+  if (!/^https?:\/\//i.test(u)) {
+    u = "https://" + u;
+  }
+  return u;
 }
 
 // extrai apenas o domínio para usar no favicon
@@ -1640,6 +1649,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
