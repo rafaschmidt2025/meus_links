@@ -637,18 +637,12 @@ function extrairDominio(url) {
   try {
     let u = (url || "").trim();
     if (!u) return "";
-
-    if (!/^https?:\/\//i.test(u)) {
-      u = "https://" + u;
-    }
-
-    const obj = new URL(u);
-    return obj.hostname;
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    return new URL(u).hostname;
   } catch (e) {
     return (url || "").trim();
   }
 }
-
 
 function chaveComparacaoURL(url) {
   try {
@@ -669,24 +663,7 @@ function chaveComparacaoURL(url) {
     if (path === "") path = "/";
 
     return host + path; // exemplo: "itau.com.br/"
-  } 
-  function extrairDominio(url) {
-  try {
-    let u = (url || "").trim();
-    if (!u) return "";
-
-    if (!/^https?:\/\//i.test(u)) {
-      u = "https://" + u;
-    }
-
-    const obj = new URL(u);
-    return obj.hostname;
-  } catch (e) {
-    return (url || "").trim();
-  }
-}
-
-  catch(e) {
+  } catch(e) {
     // se der erro, volta pro texto cru, minúsculo
     return (url || "").trim().toLowerCase();
   }
@@ -1639,6 +1616,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
