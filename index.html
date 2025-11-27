@@ -377,7 +377,7 @@ button {
 <div id="adminPanel">
   <div class="admin-box">
     <h2 id="adminTitle">Adicionar Link</h2>
-<div id="formWarning" class="form-warning" style="display:none;"></div
+<div id="formWarning" class="form-warning" style="display:none;"></div>
     <label>Categoria</label>
     <input type="text" id="catInput" list="catList" placeholder="Ex: Trabalho, IA, Estudos">
     <datalist id="catList"></datalist>
@@ -748,23 +748,21 @@ console.log("[DEBUG] salvando link", { nome, urlDigitada, urlNormalizada, catego
 if (duplicados.length > 0) {
   console.log("[DEBUG] Links duplicados detectados:", duplicados);
 
-  let msgCurta = "Este link já existe:\n";
-  msgCurta += duplicados
+  let msg = "Este link já existe em:\n\n";
+  msg += duplicados
     .map(d => `• ${d.categoria} (${d.motivo})`)
     .join("\n");
 
-  // feedback visual certo na tela
-  showToast("Este link já existe em outra categoria.");
+  if (warnEl) {
+    warnEl.textContent = msg;
+    warnEl.style.display = "block";
+  }
 
-  // se quiser manter o alert, mas sem depender dele:
-  // setTimeout(() => alert(msgCurta), 100);
+  // feedback extra embaixo da tela
+  showToast("Este link já existe. Verifique o aviso em vermelho.");
 
   return; // NÃO salva
 }
-
-
-
-
   // ===============================================================
 
   let msgToast = "Link salvo com sucesso.";
@@ -1640,6 +1638,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
