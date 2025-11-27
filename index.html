@@ -743,6 +743,7 @@ function salvar(){
       }
     });
   }
+console.log("[DEBUG] salvando link", { nome, urlDigitada, urlNormalizada, categoriaChave, duplicados });
 
 if (duplicados.length > 0) {
   console.log("[DEBUG] Links duplicados detectados:", duplicados);
@@ -1639,6 +1640,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
