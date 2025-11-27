@@ -627,6 +627,7 @@ function salvar(){
     return;
   }
 
+  // normaliza categoria (case-insensitive)
   let categoriaChave = categoriaDigitada;
   for (const cat in dados) {
     if (cat.toLowerCase() === categoriaDigitada.toLowerCase()) {
@@ -634,6 +635,53 @@ function salvar(){
       break;
     }
   }
+
+  const nomeLower = nome.toLowerCase();
+  const urlLower  = url.toLowerCase();
+
+  // ----- VERIFICA DUPLICADOS EM TODAS AS CATEGORIAS -----
+  const duplicados = [];
+
+  for (const cat in dados) {
+    if (cat === JSON_VERSION_KEY) continue;
+    const linksCat = dados[cat] || [];
+
+    linksCat.forEach((l, idx) => {
+      // se estou editando este próprio registro, ignora na comparação
+      if (editInfo &&
+          editInfo.categoria === cat &&
+          editInfo.index === idx) {
+        return;
+      }
+
+      const nomeIgual = (l.nome || "").trim().toLowerCase() === nomeLower;
+      const urlIgual  = (l.url  || "").trim().toLowerCase() === urlLower;
+
+      if (nomeIgual || urlIgual) {
+        let motivo = "";
+        if (nomeIgual && urlIgual) motivo = "nome e URL iguais";
+        else if (nomeIgual)        motivo = "nome igual";
+        else if (urlIgual)         motivo = "URL igual";
+
+        duplicados.push({
+          categoria: cat,
+          index: idx,
+          link: l,
+          motivo
+        });
+      }
+    });
+  }
+
+  if (duplicados.length > 0) {
+    let msg = "Já existe(m) link(s) com este nome ou esta URL:\n\n";
+    duplicados.forEach(d => {
+      msg += `- Categoria: ${d.categoria}\n  • Link: "${d.link.nome}"\n  • Motivo: ${d.motivo}\n  • URL: ${d.link.url}\n\n`;
+    });
+    alert(msg);
+    return;
+  }
+  // ------------------------------------------------------
 
   let msgToast = "Link salvo com sucesso.";
 
@@ -644,8 +692,10 @@ function salvar(){
     const favorito = oldLink.favorito === true;
 
     if (oldCat.toLowerCase() === categoriaChave.toLowerCase()) {
+      // edição na mesma categoria
       dados[categoriaChave][oldIndex] = {nome, url, desc, favorito};
     } else {
+      // mudou de categoria: remove da antiga e joga na nova
       dados[oldCat].splice(oldIndex,1);
       if (dados[oldCat].length === 0) {
         delete dados[oldCat];
@@ -657,13 +707,17 @@ function salvar(){
     }
     msgToast = "Link atualizado com sucesso.";
   } else {
+    // novo link
     if(!dados[categoriaChave]) {
       dados[categoriaChave] = [];
     }
     dados[categoriaChave].push({nome, url, desc, favorito:false});
   }
 
+  // garante que Firestore veja a versão atual
+  window.dados = dados;
   localStorage.setItem("meusLinks", JSON.stringify(dados));
+
   lastCategory = categoriaChave;
   localStorage.setItem("meusLinksUltimaCategoria", lastCategory);
 
@@ -677,6 +731,7 @@ function salvar(){
   atualizarListaCategorias();
   showToast(msgToast);
 }
+
 
 // abre link
 function abrirLink(url){
@@ -1477,6 +1532,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
