@@ -321,6 +321,16 @@ button {
 .context-menu button:hover {
   background:#eff6ff;
 }
+.form-warning {
+  background:#fef2f2;
+  color:#b91c1c;
+  border:1px solid #fecaca;
+  border-radius:8px;
+  padding:8px 10px;
+  font-size:12px;
+  margin-bottom:8px;
+  white-space:pre-line;
+}
 
 /* Toast de feedback */
 #toast {
@@ -351,7 +361,7 @@ button {
 
 <header>
   <h1 id="appTitle" title="Clique 3x para alternar modo administrador" style="cursor:pointer;">🔗 Meus Links</h1>
-  <div id="appVersion">1.0.0</div>
+  <div id="appVersion">1.0.1</div>
   <div class="engrenagem" onclick="abrirAdmin()">⚙️</div>
 </header>
 
@@ -367,7 +377,7 @@ button {
 <div id="adminPanel">
   <div class="admin-box">
     <h2 id="adminTitle">Adicionar Link</h2>
-
+<div id="formWarning" class="form-warning" style="display:none;"></div
     <label>Categoria</label>
     <input type="text" id="catInput" list="catList" placeholder="Ex: Trabalho, IA, Estudos">
     <datalist id="catList"></datalist>
@@ -675,6 +685,11 @@ function salvar(){
   const nome = document.getElementById("nameInput").value.trim();
   const urlDigitada = document.getElementById("urlInput").value.trim();
   const desc = document.getElementById("descInput").value.trim();
+  const warnEl = document.getElementById("formWarning");
+  if (warnEl) {
+    warnEl.style.display = "none";
+    warnEl.textContent = "";
+  }
 
   if (!categoriaDigitada || !nome || !urlDigitada) {
     alert("Preencha categoria, nome e URL.");
@@ -730,24 +745,22 @@ function salvar(){
   }
 
 if (duplicados.length > 0) {
-  let msg = "Já existe(m) link(s) equivalente(s) a este:\n\n";
-  duplicados.forEach(d => {
-    msg += `- Categoria: ${d.categoria}\n` +
-           `  • Link: "${d.link.nome}"\n` +
-           `  • Motivo: ${d.motivo}\n` +
-           `  • URL: ${d.link.url}\n\n`;
-  });
+  let msg = "Este link já existe:\n\n";
+  msg += duplicados
+    .map(d => `• ${d.categoria} (${d.motivo})`)
+    .join("\n");
 
-  // exibe toast para feedback imediato
-  showToast("Este link já existe! Veja detalhes na mensagem.");
-
-  // pequena pausa para o navegador liberar o alert
-  setTimeout(() => {
-    alert(msg);
-  }, 150);
+  if (warnEl) {
+    warnEl.textContent = msg;
+    warnEl.style.display = "block";
+  } else {
+    // fallback, se por algum motivo o elemento não existir
+    showToast("Este link já existe em outra categoria.");
+  }
 
   return; // NÃO salva
 }
+
 
 
   // ===============================================================
@@ -1625,6 +1638,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
