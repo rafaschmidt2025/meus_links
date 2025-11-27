@@ -745,21 +745,22 @@ function salvar(){
   }
 
 if (duplicados.length > 0) {
-  let msg = "Este link já existe:\n\n";
-  msg += duplicados
+  console.log("[DEBUG] Links duplicados detectados:", duplicados);
+
+  let msgCurta = "Este link já existe:\n";
+  msgCurta += duplicados
     .map(d => `• ${d.categoria} (${d.motivo})`)
     .join("\n");
 
-  if (warnEl) {
-    warnEl.textContent = msg;
-    warnEl.style.display = "block";
-  } else {
-    // fallback, se por algum motivo o elemento não existir
-    showToast("Este link já existe em outra categoria.");
-  }
+  // feedback visual certo na tela
+  showToast("Este link já existe em outra categoria.");
+
+  // se quiser manter o alert, mas sem depender dele:
+  // setTimeout(() => alert(msgCurta), 100);
 
   return; // NÃO salva
 }
+
 
 
 
@@ -1638,6 +1639,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
