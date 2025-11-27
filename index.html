@@ -604,26 +604,37 @@ function atualizarInfoSincronizacao(){
 }
 
 // ===== FAVICONS =====
+// ===== FAVICONS =====
 function carregarFavicons() {
   const imgs = document.querySelectorAll("img.favicon-img");
   imgs.forEach(img => {
     const domain = img.dataset.domain;
     if (!domain) return;
 
-    img.src = "https://www.google.com/s2/favicons?domain=" +
-      encodeURIComponent(domain) + "&sz=32";
+    img.src =
+      "https://www.google.com/s2/favicons?domain=" +
+      encodeURIComponent(domain) +
+      "&sz=32";
   });
 }
-function normalizarUrlParaSalvar(url) {
-  let u = (url || "").trim();
-  if (!u) return "";
 
-  // se não começar com http ou https, assume https://
-  if (!/^https?:\/\//i.test(u)) {
-    u = "https://" + u;
+// extrai apenas o domínio para usar no favicon
+function extrairDominio(url) {
+  try {
+    let u = (url || "").trim();
+    if (!u) return "";
+
+    if (!/^https?:\/\//i.test(u)) {
+      u = "https://" + u;
+    }
+
+    const obj = new URL(u);
+    return obj.hostname;
+  } catch (e) {
+    return (url || "").trim();
   }
-  return u;
 }
+
 
 function chaveComparacaoURL(url) {
   try {
@@ -1246,7 +1257,8 @@ function importarJSON(event){
   reader.onload = function(e){
     try {
       const json = JSON.parse(e.target.result);
-      if(typeof json === "object" && json !== null){
+
+      if (typeof json === "object" && json !== null) {
         const versaoArquivo = Number(json[JSON_VERSION_KEY] || "0");
         if (versaoArquivo) {
           dadosVersao = versaoArquivo;
@@ -1255,15 +1267,17 @@ function importarJSON(event){
         }
 
         // remove chave de versão do objeto de dados
-             delete json[JSON_VERSION_KEY];
+        delete json[JSON_VERSION_KEY];
 
         dados = json;
         window.dados = dados; // garante que o Firestore veja o novo conteúdo
         localStorage.setItem("meusLinks", JSON.stringify(dados));
+
         collapsedCategories = new Set();
         localStorage.removeItem("meusLinksCategoriasFechadas");
         lastCategory = "";
         localStorage.removeItem("meusLinksUltimaCategoria");
+
         renderizar();
         atualizarListaCategorias();
         showToast("Links importados com sucesso.");
@@ -1272,13 +1286,18 @@ function importarJSON(event){
         if (window.salvarNoFirestore) {
           window.salvarNoFirestore();
         }
+      } else {
+        alert("Arquivo JSON inválido.");
+      }
     } catch(err){
       alert("Erro ao ler o arquivo. Verifique se é um JSON válido.");
     }
   };
+
   reader.readAsText(file);
   event.target.value = "";
 }
+
 
 // botão do painel admin (pull)
 function forcarSincronizacao(){
@@ -1587,6 +1606,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
