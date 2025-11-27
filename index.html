@@ -729,17 +729,26 @@ function salvar(){
     });
   }
 
-   if (duplicados.length > 0) {
-    let msg = "Já existe(m) link(s) equivalente(s) a este:\n\n";
-    duplicados.forEach(d => {
-      msg += `- Categoria: ${d.categoria}\n` +
-             `  • Link: "${d.link.nome}"\n` +
-             `  • Motivo: ${d.motivo}\n` +
-             `  • URL: ${d.link.url}\n\n`;
-    });
+if (duplicados.length > 0) {
+  let msg = "Já existe(m) link(s) equivalente(s) a este:\n\n";
+  duplicados.forEach(d => {
+    msg += `- Categoria: ${d.categoria}\n` +
+           `  • Link: "${d.link.nome}"\n` +
+           `  • Motivo: ${d.motivo}\n` +
+           `  • URL: ${d.link.url}\n\n`;
+  });
+
+  // exibe toast para feedback imediato
+  showToast("Este link já existe! Veja detalhes na mensagem.");
+
+  // pequena pausa para o navegador liberar o alert
+  setTimeout(() => {
     alert(msg);
-    return; // NÃO salva
-  }
+  }, 150);
+
+  return; // NÃO salva
+}
+
 
   // ===============================================================
 
@@ -1616,6 +1625,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
