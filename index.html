@@ -40,6 +40,19 @@ header h1 {
   margin:0;
 }
 
+  header .title-box {
+  display:flex;
+  flex-direction:column;
+}
+
+#appVersion {
+  font-size:11px;
+  opacity:0.35;   /* transparência discreta */
+  margin-top:2px;
+  letter-spacing:0.06em;
+  pointer-events:none;
+}
+
 .engrenagem {
   font-size:24px;
   cursor:pointer;
@@ -338,6 +351,7 @@ button {
 
 <header>
   <h1 id="appTitle" title="Clique 3x para alternar modo administrador" style="cursor:pointer;">🔗 Meus Links</h1>
+  <div id="appVersion">1.0.0</div>
   <div class="engrenagem" onclick="abrirAdmin()">⚙️</div>
 </header>
 
@@ -655,7 +669,24 @@ function chaveComparacaoURL(url) {
     if (path === "") path = "/";
 
     return host + path; // exemplo: "itau.com.br/"
-  } catch(e) {
+  } 
+  function extrairDominio(url) {
+  try {
+    let u = (url || "").trim();
+    if (!u) return "";
+
+    if (!/^https?:\/\//i.test(u)) {
+      u = "https://" + u;
+    }
+
+    const obj = new URL(u);
+    return obj.hostname;
+  } catch (e) {
+    return (url || "").trim();
+  }
+}
+
+  catch(e) {
     // se der erro, volta pro texto cru, minúsculo
     return (url || "").trim().toLowerCase();
   }
@@ -721,7 +752,7 @@ function salvar(){
     });
   }
 
-  if (duplicados.length > 0) {
+   if (duplicados.length > 0) {
     let msg = "Já existe(m) link(s) equivalente(s) a este:\n\n";
     duplicados.forEach(d => {
       msg += `- Categoria: ${d.categoria}\n` +
@@ -732,6 +763,7 @@ function salvar(){
     alert(msg);
     return; // NÃO salva
   }
+
   // ===============================================================
 
   let msgToast = "Link salvo com sucesso.";
@@ -801,7 +833,8 @@ function salvar(){
 
 // abre link
 function abrirLink(url){
-  window.open(url, '_blank');
+  const finalUrl = normalizarUrlParaSalvar(url);
+  window.open(finalUrl, '_blank');
 }
 
 // alternar favorito
@@ -1606,6 +1639,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
