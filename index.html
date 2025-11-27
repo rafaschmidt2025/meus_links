@@ -375,7 +375,7 @@ button {
     <hr style="margin:16px 0; border:none; border-top:1px solid #e5e7eb;">
 
     <div style="font-size:12px; color:#6b7280; margin-bottom:6px;">
-      Backup / sincronização manual:
+      Backup manual (arquivo .json):
     </div>
 
     <button class="small-btn btn-export" type="button" onclick="exportarJSON()">Download JSON</button>
@@ -383,22 +383,14 @@ button {
     <label for="importFile" class="small-btn btn-import">Upload JSON</label>
     <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarJSON(event)">
 
-    <button class="small-btn btn-cloud" type="button" onclick="forcarSincronizacao()">
-      Baixar do Git
-    </button>
-
-    <button class="small-btn btn-cloud" type="button" onclick="enviarParaGit()">
-      Enviar p/ Git
-    </button>
-
     <button id="btnInstallPWA" class="small-btn" type="button"
             style="display:none; background:#4b5563; color:#fff;"
             onclick="instalarPWA()">
       Adicionar à tela inicial
     </button>
 
-    <!-- Rodapé com info de cache/sincronização -->
     <div id="syncInfo" style="margin-top:10px; font-size:11px; color:#6b7280;"></div>
+
   </div>
 </div>
 
@@ -495,11 +487,6 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   });
-}
-
-// se não tiver dados, tenta carregar do remoto (primeira vez apenas)
-if (!dados || Object.keys(dados).length === 0) {
-  carregarDeOneDrive(true); // auto, sem comparar versão (primeira carga)
 }
 
 // aplicar modo admin/leitura
@@ -617,57 +604,14 @@ function atualizarInfoSincronizacao(){
 }
 
 // ===== FAVICONS =====
-function salvarFaviconCache(){
-  try {
-    localStorage.setItem("meusLinksFavicons", JSON.stringify(faviconCache));
-  } catch(e) {
-    // se der erro de quota, ignora
-  }
-}
-
-function extrairDominio(url){
-  try {
-    return new URL(url).hostname;
-  } catch(e){
-    const match = String(url).match(/https?:\/\/([^/]+)/i);
-    return match ? match[1] : String(url);
-  }
-}
-
-function carregarFavicons(){
+function carregarFavicons() {
   const imgs = document.querySelectorAll("img.favicon-img");
-  const agora = Date.now();
-  const expMs = FAVICON_CACHE_DIAS * 24*60*60*1000;
-
   imgs.forEach(img => {
     const domain = img.dataset.domain;
     if (!domain) return;
 
-    const cached = faviconCache[domain];
-    if (cached && (agora - cached.ts < expMs) && cached.dataUrl) {
-      img.src = cached.dataUrl;
-      return;
-    }
-
-    const url = "https://www.google.com/s2/favicons?domain=" +
+    img.src = "https://www.google.com/s2/favicons?domain=" +
       encodeURIComponent(domain) + "&sz=32";
-
-    fetch(url)
-      .then(resp => resp.blob())
-      .then(blob => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      }))
-      .then(dataUrl => {
-        faviconCache[domain] = { dataUrl, ts: agora };
-        salvarFaviconCache();
-        img.src = dataUrl;
-      })
-      .catch(() => {
-        img.src = url; // fallback
-      });
   });
 }
 
@@ -1201,10 +1145,10 @@ function importarJSON(event){
         }
 
         // remove chave de versão do objeto de dados
-        delete json[JSON_VERSION_KEY];
+             delete json[JSON_VERSION_KEY];
 
         dados = json;
-        window.dados = dados;
+        window.dados = dados; // garante que o Firestore veja o novo conteúdo
         localStorage.setItem("meusLinks", JSON.stringify(dados));
         collapsedCategories = new Set();
         localStorage.removeItem("meusLinksCategoriasFechadas");
@@ -1213,9 +1157,11 @@ function importarJSON(event){
         renderizar();
         atualizarListaCategorias();
         showToast("Links importados com sucesso.");
-      } else {
-        alert("Arquivo JSON inválido.");
-      }
+
+        // dispara salvar na nuvem para sincronizar com outros dispositivos
+        if (window.salvarNoFirestore) {
+          window.salvarNoFirestore();
+        }
     } catch(err){
       alert("Erro ao ler o arquivo. Verifique se é um JSON válido.");
     }
@@ -1531,6 +1477,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
