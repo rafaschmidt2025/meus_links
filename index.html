@@ -760,17 +760,18 @@ function salvar(){
     });
   }
 
-  if (duplicados.length > 0) {
-    console.warn("[DEBUG salvar] link duplicado encontrado", duplicados);
+if (duplicados.length > 0) {
+  console.warn("[DEBUG salvar] link duplicado encontrado", duplicados);
 
-    let msg = "Já existe(m) link(s) equivalente(s): ";
-    msg += duplicados.map(d =>
-      `[${d.categoria}] "${d.link.nome}" (${d.motivo})`
-    ).join(" | ");
+  let msg = "Já existe(m) link(s) equivalente(s): ";
+  msg += duplicados.map(d =>
+    `[${d.categoria}] "${d.link.nome}" (${d.motivo})`
+  ).join(" | ");
 
-    showToast(msg);
-    return; // NÃO salva
-  }
+  showToast(msg);
+  return false; // ❌ NÃO salvou nada
+}
+
   // ===============================================================
 
   let msgToast = "Link salvo com sucesso.";
@@ -837,6 +838,7 @@ function salvar(){
   showToast(msgToast);
 
   console.log("[DEBUG salvar] fim OK");
+  return true;
 }
 
 // abre link sempre com http/https
@@ -1628,15 +1630,29 @@ atualizarInfoSincronizacao();
   });
 
   // Embrulha as funções que alteram dados
-  function wrap(nomeFunc) {
-    const original = window[nomeFunc];
-    if (typeof original !== "function") return;
-    window[nomeFunc] = async function(...args) {
-      const resultado = original.apply(this, args);
-      try { await salvarNoFirestore(); } catch (e) {}
+function wrap(nomeFunc) {
+  const original = window[nomeFunc];
+  if (typeof original !== "function") return;
+  window[nomeFunc] = async function(...args) {
+    const resultado = original.apply(this, args);
+
+    // se a função original retornar false, significa "não houve mudança"
+    if (resultado === false) {
+      console.log(`[wrap] ${nomeFunc} não alterou dados, não vou salvar no Firestore.`);
       return resultado;
-    };
-  }
+    }
+
+    try {
+      await salvarNoFirestore();
+    } catch (e) {
+      // só loga o erro, sem derrubar nada
+      console.error("[wrap] erro ao salvar no Firestore:", e);
+    }
+
+    return resultado;
+  };
+}
+
 
   wrap("salvar");
   wrap("apagarLink");
@@ -1649,7 +1665,3 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
-
-
-
-
