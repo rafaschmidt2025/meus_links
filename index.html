@@ -622,7 +622,7 @@ function salvar(){
   const url = document.getElementById("urlInput").value.trim();
   const desc = document.getElementById("descInput").value.trim();
 
-  if(!categoriaDigitada || !nome || !url){
+  if (!categoriaDigitada || !nome || !url) {
     alert("Preencha categoria, nome e URL.");
     return;
   }
@@ -639,23 +639,26 @@ function salvar(){
   const nomeLower = nome.toLowerCase();
   const urlLower  = url.toLowerCase();
 
-  // ----- VERIFICA DUPLICADOS EM TODAS AS CATEGORIAS -----
+  // ========== VERIFICA DUPLICADOS EM TODAS AS CATEGORIAS ==========
   const duplicados = [];
 
-  for (const cat in dados) {
-    if (cat === JSON_VERSION_KEY) continue;
-    const linksCat = dados[cat] || [];
+  for (const [cat, linksCat] of Object.entries(dados || {})) {
+    // ignora qualquer chave que não seja array de links
+    if (!Array.isArray(linksCat)) continue;
 
     linksCat.forEach((l, idx) => {
-      // se estou editando este próprio registro, ignora na comparação
+      // se estiver editando este próprio link, ignora na comparação
       if (editInfo &&
           editInfo.categoria === cat &&
           editInfo.index === idx) {
         return;
       }
 
-      const nomeIgual = (l.nome || "").trim().toLowerCase() === nomeLower;
-      const urlIgual  = (l.url  || "").trim().toLowerCase() === urlLower;
+      const nomeExistente = (l.nome || "").trim().toLowerCase();
+      const urlExistente  = (l.url  || "").trim().toLowerCase();
+
+      const nomeIgual = nomeExistente === nomeLower;
+      const urlIgual  = urlExistente === urlLower;
 
       if (nomeIgual || urlIgual) {
         let motivo = "";
@@ -665,7 +668,6 @@ function salvar(){
 
         duplicados.push({
           categoria: cat,
-          index: idx,
           link: l,
           motivo
         });
@@ -676,12 +678,15 @@ function salvar(){
   if (duplicados.length > 0) {
     let msg = "Já existe(m) link(s) com este nome ou esta URL:\n\n";
     duplicados.forEach(d => {
-      msg += `- Categoria: ${d.categoria}\n  • Link: "${d.link.nome}"\n  • Motivo: ${d.motivo}\n  • URL: ${d.link.url}\n\n`;
+      msg += `- Categoria: ${d.categoria}\n` +
+             `  • Link: "${d.link.nome}"\n` +
+             `  • Motivo: ${d.motivo}\n` +
+             `  • URL: ${d.link.url}\n\n`;
     });
     alert(msg);
-    return;
+    return; // NÃO salva
   }
-  // ------------------------------------------------------
+  // ===============================================================
 
   let msgToast = "Link salvo com sucesso.";
 
@@ -696,7 +701,7 @@ function salvar(){
       dados[categoriaChave][oldIndex] = {nome, url, desc, favorito};
     } else {
       // mudou de categoria: remove da antiga e joga na nova
-      dados[oldCat].splice(oldIndex,1);
+      dados[oldCat].splice(oldIndex, 1);
       if (dados[oldCat].length === 0) {
         delete dados[oldCat];
       }
@@ -708,7 +713,7 @@ function salvar(){
     msgToast = "Link atualizado com sucesso.";
   } else {
     // novo link
-    if(!dados[categoriaChave]) {
+    if (!dados[categoriaChave]) {
       dados[categoriaChave] = [];
     }
     dados[categoriaChave].push({nome, url, desc, favorito:false});
@@ -721,16 +726,17 @@ function salvar(){
   lastCategory = categoriaChave;
   localStorage.setItem("meusLinksUltimaCategoria", lastCategory);
 
-  document.getElementById("catInput").value="";
-  document.getElementById("nameInput").value="";
-  document.getElementById("urlInput").value="";
-  document.getElementById("descInput").value="";
+  document.getElementById("catInput").value = "";
+  document.getElementById("nameInput").value = "";
+  document.getElementById("urlInput").value = "";
+  document.getElementById("descInput").value = "";
 
   fecharAdmin();
   renderizar();
   atualizarListaCategorias();
   showToast(msgToast);
 }
+
 
 
 // abre link
@@ -1532,6 +1538,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
