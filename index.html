@@ -614,15 +614,50 @@ function carregarFavicons() {
       encodeURIComponent(domain) + "&sz=32";
   });
 }
+function normalizarUrlParaSalvar(url) {
+  let u = (url || "").trim();
+  if (!u) return "";
+
+  // se não começar com http ou https, assume https://
+  if (!/^https?:\/\//i.test(u)) {
+    u = "https://" + u;
+  }
+  return u;
+}
+
+function chaveComparacaoURL(url) {
+  try {
+    let u = (url || "").trim();
+    if (!u) return "";
+
+    if (!/^https?:\/\//i.test(u)) {
+      u = "https://" + u;
+    }
+
+    const obj = new URL(u);
+    let host = obj.hostname.toLowerCase();
+    if (host.startsWith("www.")) host = host.slice(4);
+
+    let path = obj.pathname || "/";
+    // tira barras finais repetidas
+    path = path.replace(/\/+$/,"");
+    if (path === "") path = "/";
+
+    return host + path; // exemplo: "itau.com.br/"
+  } catch(e) {
+    // se der erro, volta pro texto cru, minúsculo
+    return (url || "").trim().toLowerCase();
+  }
+}
 
 // salva link
 function salvar(){
   const categoriaDigitada = document.getElementById("catInput").value.trim();
   const nome = document.getElementById("nameInput").value.trim();
-  const url = document.getElementById("urlInput").value.trim();
+  const urlDigitada = document.getElementById("urlInput").value.trim();
   const desc = document.getElementById("descInput").value.trim();
 
-  if (!categoriaDigitada || !nome || !url) {
+  if (!categoriaDigitada || !nome || !urlDigitada) {
     alert("Preencha categoria, nome e URL.");
     return;
   }
@@ -637,14 +672,14 @@ function salvar(){
   }
 
   const nomeLower = nome.toLowerCase();
-  const urlLower  = url.toLowerCase();
+  const urlNormalizada = normalizarUrlParaSalvar(urlDigitada);
+  const chaveUrlNova = chaveComparacaoURL(urlNormalizada);
 
   // ========== VERIFICA DUPLICADOS EM TODAS AS CATEGORIAS ==========
   const duplicados = [];
 
   for (const [cat, linksCat] of Object.entries(dados || {})) {
-    // ignora qualquer chave que não seja array de links
-    if (!Array.isArray(linksCat)) continue;
+    if (!Array.isArray(linksCat)) continue; // ignora coisas que não são lista de links
 
     linksCat.forEach((l, idx) => {
       // se estiver editando este próprio link, ignora na comparação
@@ -655,16 +690,16 @@ function salvar(){
       }
 
       const nomeExistente = (l.nome || "").trim().toLowerCase();
-      const urlExistente  = (l.url  || "").trim().toLowerCase();
+      const chaveUrlExistente = chaveComparacaoURL(l.url);
 
       const nomeIgual = nomeExistente === nomeLower;
-      const urlIgual  = urlExistente === urlLower;
+      const urlIgual  = chaveUrlExistente === chaveUrlNova;
 
       if (nomeIgual || urlIgual) {
         let motivo = "";
-        if (nomeIgual && urlIgual) motivo = "nome e URL iguais";
-        else if (nomeIgual)        motivo = "nome igual";
-        else if (urlIgual)         motivo = "URL igual";
+        if (nomeIgual && urlIgual) motivo = "nome e URL equivalentes";
+        else if (nomeIgual)        motivo = "nome equivalente";
+        else if (urlIgual)         motivo = "URL equivalente (mesmo site/endereço)";
 
         duplicados.push({
           categoria: cat,
@@ -676,7 +711,7 @@ function salvar(){
   }
 
   if (duplicados.length > 0) {
-    let msg = "Já existe(m) link(s) com este nome ou esta URL:\n\n";
+    let msg = "Já existe(m) link(s) equivalente(s) a este:\n\n";
     duplicados.forEach(d => {
       msg += `- Categoria: ${d.categoria}\n` +
              `  • Link: "${d.link.nome}"\n` +
@@ -698,7 +733,12 @@ function salvar(){
 
     if (oldCat.toLowerCase() === categoriaChave.toLowerCase()) {
       // edição na mesma categoria
-      dados[categoriaChave][oldIndex] = {nome, url, desc, favorito};
+      dados[categoriaChave][oldIndex] = {
+        nome,
+        url: urlNormalizada,
+        desc,
+        favorito
+      };
     } else {
       // mudou de categoria: remove da antiga e joga na nova
       dados[oldCat].splice(oldIndex, 1);
@@ -708,7 +748,12 @@ function salvar(){
       if (!dados[categoriaChave]) {
         dados[categoriaChave] = [];
       }
-      dados[categoriaChave].push({nome, url, desc, favorito});
+      dados[categoriaChave].push({
+        nome,
+        url: urlNormalizada,
+        desc,
+        favorito
+      });
     }
     msgToast = "Link atualizado com sucesso.";
   } else {
@@ -716,7 +761,12 @@ function salvar(){
     if (!dados[categoriaChave]) {
       dados[categoriaChave] = [];
     }
-    dados[categoriaChave].push({nome, url, desc, favorito:false});
+    dados[categoriaChave].push({
+      nome,
+      url: urlNormalizada,
+      desc,
+      favorito:false
+    });
   }
 
   // garante que Firestore veja a versão atual
@@ -736,6 +786,7 @@ function salvar(){
   atualizarListaCategorias();
   showToast(msgToast);
 }
+
 
 // abre link
 function abrirLink(url){
@@ -1536,6 +1587,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
