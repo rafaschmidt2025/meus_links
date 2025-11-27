@@ -39,6 +39,16 @@ header h1 {
   font-size:20px;
   margin:0;
 }
+.header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-version {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7); /* discreto e “transparente” */
+  margin-top: 2px;
+}
 
   header .title-box {
   display:flex;
@@ -361,7 +371,7 @@ button {
 
 <header>
   <h1 id="appTitle" title="Clique 3x para alternar modo administrador" style="cursor:pointer;">🔗 Meus Links</h1>
-  <div id="appVersion">1.0.1</div>
+  <div id="appVersion">1.0.2</div>
   <div class="engrenagem" onclick="abrirAdmin()">⚙️</div>
 </header>
 
@@ -685,14 +695,11 @@ function salvar(){
   const nome = document.getElementById("nameInput").value.trim();
   const urlDigitada = document.getElementById("urlInput").value.trim();
   const desc = document.getElementById("descInput").value.trim();
-  const warnEl = document.getElementById("formWarning");
-  if (warnEl) {
-    warnEl.style.display = "none";
-    warnEl.textContent = "";
-  }
+
+  console.log("[DEBUG salvar] início", { categoriaDigitada, nome, urlDigitada, desc });
 
   if (!categoriaDigitada || !nome || !urlDigitada) {
-    alert("Preencha categoria, nome e URL.");
+    showToast("Preencha categoria, nome e URL.");
     return;
   }
 
@@ -743,26 +750,18 @@ function salvar(){
       }
     });
   }
-console.log("[DEBUG] salvando link", { nome, urlDigitada, urlNormalizada, categoriaChave, duplicados });
 
-if (duplicados.length > 0) {
-  console.log("[DEBUG] Links duplicados detectados:", duplicados);
+  if (duplicados.length > 0) {
+    console.warn("[DEBUG salvar] link duplicado encontrado", duplicados);
 
-  let msg = "Este link já existe em:\n\n";
-  msg += duplicados
-    .map(d => `• ${d.categoria} (${d.motivo})`)
-    .join("\n");
+    let msg = "Já existe(m) link(s) equivalente(s): ";
+    msg += duplicados.map(d =>
+      `[${d.categoria}] "${d.link.nome}" (${d.motivo})`
+    ).join(" | ");
 
-  if (warnEl) {
-    warnEl.textContent = msg;
-    warnEl.style.display = "block";
+    showToast(msg);
+    return; // NÃO salva
   }
-
-  // feedback extra embaixo da tela
-  showToast("Este link já existe. Verifique o aviso em vermelho.");
-
-  return; // NÃO salva
-}
   // ===============================================================
 
   let msgToast = "Link salvo com sucesso.";
@@ -827,14 +826,17 @@ if (duplicados.length > 0) {
   renderizar();
   atualizarListaCategorias();
   showToast(msgToast);
+
+  console.log("[DEBUG salvar] fim OK");
 }
 
-
-// abre link
+// abre link sempre com http/https
 function abrirLink(url){
   const finalUrl = normalizarUrlParaSalvar(url);
   window.open(finalUrl, '_blank');
 }
+
+
 
 // alternar favorito
 function toggleFavorito(event, categoria, index){
@@ -1638,6 +1640,7 @@ atualizarInfoSincronizacao();
 
 </body>
 </html>
+
 
 
 
